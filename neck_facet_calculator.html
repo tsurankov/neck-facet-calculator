@@ -1,0 +1,1790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neck Facet Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0c0e0d;
+  --s0: #111412;
+  --s1: #171a18;
+  --s2: #1e2220;
+  --s3: #262b28;
+  --border: #2e3430;
+  --border2: #3a4038;
+  --g: #b6f06e;       /* green accent */
+  --g2: #d4f8a0;
+  --amber: #f0b84a;
+  --blue: #6ec6f0;
+  --rose: #f0706e;
+  --text: #e4ede4;
+  --t2: #9aaa9a;
+  --t3: #5a6a5a;
+  --r: 3px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'DM Mono',monospace;
+  font-size:13px;
+  display:flex;
+  flex-direction:column;
+  height:100vh;
+}
+
+/* ── TOPBAR ── */
+.topbar{
+  display:flex;align-items:center;
+  padding:0 20px;
+  height:52px;
+  border-bottom:1px solid var(--border);
+  gap:16px;
+  flex-shrink:0;
+  background:var(--s0);
+}
+.brand{
+  font-family:'Syne',sans-serif;
+  font-weight:800;font-size:15px;
+  color:var(--g);
+  letter-spacing:-.3px;
+  white-space:nowrap;
+}
+.brand em{color:var(--t3);font-style:normal;font-weight:400}
+.tab-group{display:flex;gap:2px;margin-left:auto}
+.tab{
+  padding:6px 14px;
+  border:1px solid transparent;
+  border-radius:var(--r);
+  font-family:'DM Mono',monospace;
+  font-size:11px;
+  cursor:pointer;
+  color:var(--t2);
+  background:transparent;
+  transition:all .15s;
+  letter-spacing:.5px;
+  text-transform:uppercase;
+}
+.tab:hover{color:var(--text);border-color:var(--border2)}
+.tab.active{color:var(--g);border-color:var(--g);background:rgba(182,240,110,.06)}
+.share-btn{
+  margin-left:8px;
+  padding:6px 14px;
+  border:1px solid var(--border2);
+  border-radius:var(--r);
+  font-family:'DM Mono',monospace;
+  font-size:11px;
+  cursor:pointer;
+  color:var(--t2);
+  background:transparent;
+  transition:all .15s;
+  letter-spacing:.5px;
+  text-transform:uppercase;
+  display:flex;align-items:center;gap:6px;
+}
+.share-btn:hover{color:var(--amber);border-color:var(--amber)}
+.share-btn.copied{color:var(--g);border-color:var(--g)}
+
+/* ── LAYOUT ── */
+.body-wrap{
+  display:flex;
+  flex:1;
+  overflow:hidden;
+}
+
+/* ── LEFT PANEL ── */
+.left{
+  width:340px;
+  flex-shrink:0;
+  border-right:1px solid var(--border);
+  overflow-y:auto;
+  padding:16px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  background:var(--s0);
+}
+.left::-webkit-scrollbar{width:4px}
+.left::-webkit-scrollbar-track{background:transparent}
+.left::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* mode toggle */
+.mode-toggle{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:2px;
+  background:var(--s2);
+  border-radius:var(--r);
+  padding:2px;
+}
+.mode-btn{
+  padding:7px;
+  border:none;border-radius:2px;
+  font-family:'DM Mono',monospace;
+  font-size:10px;
+  letter-spacing:.5px;
+  text-transform:uppercase;
+  cursor:pointer;
+  color:var(--t3);
+  background:transparent;
+  transition:all .15s;
+}
+.mode-btn.active{
+  background:var(--s0);
+  color:var(--text);
+  box-shadow:0 1px 3px rgba(0,0,0,.4);
+}
+
+.card{
+  background:var(--s1);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:14px;
+}
+.card-head{
+  font-family:'Syne',sans-serif;
+  font-weight:700;
+  font-size:12px;
+  letter-spacing:.3px;
+  margin-bottom:12px;
+  display:flex;align-items:center;gap:8px;
+}
+.badge{
+  font-family:'DM Mono',monospace;
+  font-size:9px;
+  font-weight:500;
+  padding:2px 7px;
+  border-radius:2px;
+  letter-spacing:.5px;
+}
+.badge-g{background:rgba(182,240,110,.15);color:var(--g);border:1px solid rgba(182,240,110,.2)}
+.badge-a{background:rgba(240,184,74,.15);color:var(--amber);border:1px solid rgba(240,184,74,.2)}
+.badge-b{background:rgba(110,198,240,.15);color:var(--blue);border:1px solid rgba(110,198,240,.2)}
+
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.fg{display:flex;flex-direction:column;gap:4px}
+.fg label{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:1px}
+.fg input[type=number],.fg select{
+  background:var(--bg);
+  border:1px solid var(--border);
+  border-radius:2px;
+  color:var(--text);
+  font-family:'DM Mono',monospace;
+  font-size:13px;
+  padding:7px 9px;
+  width:100%;
+  outline:none;
+  transition:border-color .15s;
+  appearance:none;
+}
+.fg input[type=number]:focus,.fg select:focus{border-color:var(--g)}
+.fg.amber input:focus{border-color:var(--amber)}
+.fg.blue input:focus{border-color:var(--blue)}
+
+/* profile grid */
+.prof-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:5px;
+  margin-top:4px;
+}
+.prof-btn{
+  background:var(--bg);
+  border:1px solid var(--border);
+  border-radius:2px;
+  padding:8px 10px;
+  cursor:pointer;
+  text-align:left;
+  transition:all .15s;
+  font-family:'DM Mono',monospace;
+}
+.prof-btn:hover{border-color:var(--border2)}
+.prof-btn.active-g{border-color:var(--g);background:rgba(182,240,110,.05)}
+.prof-btn.active-a{border-color:var(--amber);background:rgba(240,184,74,.05)}
+.prof-btn .pname{font-size:11px;color:var(--text)}
+.prof-btn .pval{font-size:9px;color:var(--t3);margin-top:1px}
+.prof-btn.active-g .pname{color:var(--g)}
+.prof-btn.active-a .pname{color:var(--amber)}
+
+/* mid fret */
+.mid-row{
+  display:flex;align-items:center;gap:10px;
+  background:var(--s2);
+  border-radius:var(--r);
+  padding:10px 12px;
+}
+.mid-row label{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+.mid-row input{
+  background:transparent;
+  border:none;
+  border-bottom:1px solid var(--border2);
+  color:var(--blue);
+  font-family:'DM Mono',monospace;
+  font-size:16px;
+  width:44px;
+  text-align:center;
+  outline:none;
+  padding:2px 0;
+}
+.mid-row .mid-info{font-size:9px;color:var(--t3);margin-left:auto}
+
+.calc-btn{
+  background:var(--g);
+  color:var(--bg);
+  border:none;
+  border-radius:var(--r);
+  font-family:'Syne',sans-serif;
+  font-weight:800;
+  font-size:13px;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  padding:13px;
+  width:100%;
+  cursor:pointer;
+  transition:all .15s;
+}
+.calc-btn:hover{background:var(--g2);transform:translateY(-1px)}
+.calc-btn:active{transform:none}
+
+/* blank mode extras */
+.blank-fields{display:none}
+.blank-fields.visible{display:block}
+.simple-fields.hidden{display:none}
+
+/* ── RIGHT PANEL ── */
+.right{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+/* viz strip */
+.viz{
+  border-bottom:1px solid var(--border);
+  background:var(--s0);
+  flex-shrink:0;
+  overflow:hidden;
+}
+.cv-wrap{flex:1;min-width:0}
+.cv-label{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px}
+canvas{
+  width:100%;
+  height:140px;
+  background:var(--bg);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  display:block;
+}
+
+/* legend */
+.legend{
+  display:flex;gap:10px;margin-top:6px;flex-wrap:wrap;
+}
+.leg{display:flex;align-items:center;gap:4px;font-size:9px;color:var(--t3)}
+.leg-line{width:16px;height:2px;border-radius:1px}
+
+/* results */
+.results{
+  flex:1;
+  overflow-y:auto;
+  padding:16px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+.results::-webkit-scrollbar{width:4px}
+.results::-webkit-scrollbar-track{background:transparent}
+.results::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+.empty-state{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  color:var(--t3);
+}
+.empty-state .big{font-size:40px;opacity:.3}
+.empty-state p{font-size:11px;text-align:center;line-height:1.6}
+
+/* result blocks */
+.rblock{
+  background:var(--s1);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+}
+.rblock-head{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 14px;
+  border-bottom:1px solid var(--border);
+  background:var(--s2);
+}
+.rblock-head h3{
+  font-family:'Syne',sans-serif;
+  font-weight:700;font-size:14px;
+}
+.rblock-head .params{font-size:10px;color:var(--t3);margin-left:auto}
+.rblock-body{padding:14px;display:flex;flex-direction:column;gap:10px}
+
+.mcard{
+  background:var(--bg);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:12px 14px;
+}
+.mcard h4{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:10px}
+.mrow{
+  display:flex;justify-content:space-between;align-items:baseline;
+  margin-bottom:7px;
+}
+.mrow:last-child{margin-bottom:0}
+.mrow .ml{font-size:10px;color:var(--t2)}
+.mrow .mv{font-size:17px;font-weight:500}
+.mrow .mu{font-size:10px;color:var(--t3);font-weight:400}
+
+.markup-card{
+  grid-column:1/-1;
+  background:var(--bg);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:12px 14px;
+}
+.markup-card h4{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:12px}
+.markup-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.markup-item{}
+.markup-item .mi-label{font-size:9px;color:var(--t3);margin-bottom:4px;line-height:1.4}
+.markup-item .mi-val{font-size:20px;font-weight:500}
+.markup-item .mi-sub{font-size:9px;color:var(--t3)}
+
+/* color themes per fret */
+.c-g{color:var(--g)}
+.c-a{color:var(--amber)}
+.c-b{color:var(--blue)}
+
+/* ── LIBRARY TAB ── */
+.lib-panel{
+  flex:1;
+  display:none;
+  flex-direction:column;
+  overflow:hidden;
+}
+.lib-panel.active{display:flex}
+
+.lib-toolbar{
+  padding:12px 16px;
+  border-bottom:1px solid var(--border);
+  display:flex;gap:8px;align-items:center;
+  background:var(--s0);
+  flex-shrink:0;
+}
+.lib-search{
+  flex:1;
+  background:var(--s2);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  color:var(--text);
+  font-family:'DM Mono',monospace;
+  font-size:12px;
+  padding:7px 12px;
+  outline:none;
+  transition:border-color .15s;
+}
+.lib-search:focus{border-color:var(--border2)}
+.filter-btns{display:flex;gap:4px}
+.filter-btn{
+  padding:5px 10px;
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  font-family:'DM Mono',monospace;
+  font-size:10px;
+  letter-spacing:.3px;
+  cursor:pointer;
+  color:var(--t3);
+  background:transparent;
+  transition:all .15s;
+}
+.filter-btn:hover{color:var(--text);border-color:var(--border2)}
+.filter-btn.active{color:var(--g);border-color:var(--g);background:rgba(182,240,110,.05)}
+
+.lib-body{
+  flex:1;
+  overflow-y:auto;
+  padding:14px 16px;
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+}
+.lib-body::-webkit-scrollbar{width:4px}
+.lib-body::-webkit-scrollbar-track{background:transparent}
+.lib-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+.lib-brand{
+  display:flex;flex-direction:column;gap:6px;
+}
+.lib-brand-name{
+  font-family:'Syne',sans-serif;
+  font-weight:700;
+  font-size:11px;
+  color:var(--t2);
+  text-transform:uppercase;
+  letter-spacing:2px;
+  padding-bottom:6px;
+  border-bottom:1px solid var(--border);
+}
+.lib-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px}
+
+.lib-card{
+  background:var(--s1);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:12px 14px;
+  cursor:pointer;
+  transition:all .15s;
+  position:relative;
+}
+.lib-card:hover{
+  border-color:var(--g);
+  background:rgba(182,240,110,.04);
+  transform:translateY(-1px);
+}
+.lib-card:hover .load-hint{opacity:1}
+.lib-card-name{
+  font-family:'Syne',sans-serif;
+  font-weight:700;
+  font-size:12px;
+  margin-bottom:6px;
+  color:var(--text);
+}
+.lib-card-str{
+  font-size:9px;
+  color:var(--t3);
+  margin-bottom:8px;
+  text-transform:uppercase;
+  letter-spacing:.5px;
+}
+.lib-dims{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.lib-dim{display:flex;flex-direction:column;gap:1px}
+.lib-dim .dk{font-size:8px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px}
+.lib-dim .dv{font-size:12px;color:var(--text)}
+.load-hint{
+  position:absolute;
+  bottom:8px;right:10px;
+  font-size:8px;
+  color:var(--g);
+  letter-spacing:.5px;
+  text-transform:uppercase;
+  opacity:0;
+  transition:opacity .15s;
+}
+.lib-note{
+  font-size:9px;
+  color:var(--t3);
+  padding:8px 10px;
+  background:var(--s2);
+  border-radius:var(--r);
+  border-left:2px solid var(--border2);
+  line-height:1.6;
+  margin-top:4px;
+}
+
+/* toast */
+.toast{
+  position:fixed;
+  bottom:20px;right:20px;
+  background:var(--g);
+  color:var(--bg);
+  font-family:'DM Mono',monospace;
+  font-size:11px;
+  font-weight:500;
+  padding:10px 16px;
+  border-radius:var(--r);
+  transform:translateY(60px);
+  opacity:0;
+  transition:all .25s;
+  z-index:999;
+  letter-spacing:.5px;
+}
+.toast.show{transform:none;opacity:1}
+
+/* calc panel */
+.calc-panel{display:flex;flex:1;overflow:hidden}
+.calc-panel.hidden{display:none}
+
+/* ── LIGHTBOX ── */
+.lb-overlay{
+  display:none;
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.85);
+  z-index:9000;
+  align-items:center;
+  justify-content:center;
+  cursor:zoom-out;
+  backdrop-filter:blur(4px);
+}
+.lb-overlay.open{display:flex}
+.lb-wrap{
+  position:relative;
+  background:var(--bg);
+  border:1px solid var(--border2);
+  border-radius:6px;
+  padding:16px;
+  max-width:90vw;
+  max-height:90vh;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.lb-title{
+  font-size:10px;
+  color:var(--t2);
+  text-transform:uppercase;
+  letter-spacing:1.5px;
+}
+.lb-canvas-wrap{
+  flex:1;
+  min-height:0;
+  display:flex;
+  align-items:stretch;
+  justify-content:center;
+}
+#lbCanvas{
+  display:block;
+  width:100%;
+  height:100%;
+  border:1px solid var(--border);
+  border-radius:4px;
+  background:var(--bg);
+}
+.lb-close{
+  position:absolute;top:10px;right:12px;
+  background:none;border:none;
+  color:var(--t2);font-size:18px;cursor:pointer;
+  line-height:1;
+}
+.lb-close:hover{color:var(--text)}
+canvas{cursor:zoom-in}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="brand">Neck Facet <em>Calculator</em></div>
+  <div class="tab-group">
+    <button class="tab active" onclick="switchTab('calc')">Calculator</button>
+    <button class="tab" onclick="switchTab('lib')">Library</button>
+  </div>
+  <button class="share-btn" id="shareBtn" onclick="shareURL()">
+    <span>⇧</span> Share
+  </button>
+</div>
+
+<div class="body-wrap">
+
+<!-- ══ CALCULATOR TAB ══ -->
+<div class="calc-panel" id="calcPanel">
+
+  <!-- LEFT -->
+  <div class="left">
+
+    <!-- Mode toggle -->
+    <div class="mode-toggle">
+      <button class="mode-btn active" id="modeSimple" onclick="setMode('simple')">Direct (W1/W12)</button>
+      <button class="mode-btn" id="modeBlank" onclick="setMode('blank')">From Blank</button>
+    </div>
+
+    <!-- FRET 1 -->
+    <div class="card">
+      <div class="card-head">
+        <span class="badge badge-g">FRET 1</span> First Fret
+      </div>
+
+      <!-- SIMPLE MODE -->
+      <div class="simple-fields" id="sf1">
+        <div class="row2" style="margin-bottom:8px">
+          <div class="fg">
+            <label>Width W₁ (mm)</label>
+            <input type="number" id="w1" value="50" step="0.1" min="30" max="80">
+          </div>
+          <div class="fg">
+            <label>Thickness T₁ (mm)</label>
+            <input type="number" id="t1" value="20" step="0.1" min="10" max="35">
+          </div>
+        </div>
+      </div>
+
+      <!-- BLANK MODE -->
+      <div class="blank-fields" id="bf_top">
+        <div class="row3" style="margin-bottom:8px">
+          <div class="fg">
+            <label>W Nut (mm)</label>
+            <input type="number" id="w_nut" value="49" step="0.1">
+          </div>
+          <div class="fg">
+            <label>W Last (mm)</label>
+            <input type="number" id="w_last" value="66" step="0.1">
+          </div>
+          <div class="fg">
+            <label>Frets</label>
+            <input type="number" id="frets" value="24" step="1" min="18" max="27">
+          </div>
+        </div>
+        <div class="row2" style="margin-bottom:8px">
+          <div class="fg">
+            <label>Scale (mm)</label>
+            <input type="number" id="scale_mm" value="660" step="1">
+          </div>
+          <div class="fg">
+            <label>T₁ (mm)</label>
+            <input type="number" id="t1b" value="20" step="0.1">
+          </div>
+        </div>
+      </div>
+
+      <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Profile (n₁)</div>
+      <div class="prof-grid" id="profGrid1">
+        <button class="prof-btn" data-n="1.3" onclick="selProf(1,this)"><div class="pname">Soft V</div><div class="pval">n = 1.3</div></button>
+        <button class="prof-btn" data-n="1.5" onclick="selProf(1,this)"><div class="pname">U / Vintage</div><div class="pval">n = 1.5</div></button>
+        <button class="prof-btn" data-n="1.8" onclick="selProf(1,this)"><div class="pname">Oval C</div><div class="pval">n = 1.8</div></button>
+        <button class="prof-btn" data-n="2.0" onclick="selProf(1,this)"><div class="pname">Classic C</div><div class="pval">n = 2.0</div></button>
+        <button class="prof-btn active-g" data-n="2.2" onclick="selProf(1,this)"><div class="pname">Modern C</div><div class="pval">n = 2.2</div></button>
+        <button class="prof-btn" data-n="2.4" onclick="selProf(1,this)"><div class="pname">Thin C</div><div class="pval">n = 2.4</div></button>
+        <button class="prof-btn" data-n="2.6" onclick="selProf(1,this)"><div class="pname">D Shape</div><div class="pval">n = 2.6</div></button>
+        <button class="prof-btn" data-n="2.8" onclick="selProf(1,this)"><div class="pname">Wizard II</div><div class="pval">n = 2.8</div></button>
+        <button class="prof-btn" data-n="3.0" onclick="selProf(1,this)"><div class="pname">Flat D / Wiz</div><div class="pval">n = 3.0</div></button>
+      </div>
+      <input type="hidden" id="n1" value="2.2">
+    </div>
+
+    <!-- FRET 12 -->
+    <div class="card">
+      <div class="card-head">
+        <span class="badge badge-a">FRET 12</span> Twelfth Fret
+      </div>
+      <div class="row2" style="margin-bottom:8px">
+        <div class="fg amber">
+          <label>Width W₁₂ (mm)</label>
+          <input type="number" id="w12" value="60" step="0.1" min="30" max="100">
+        </div>
+        <div class="fg amber">
+          <label>Thickness T₁₂ (mm)</label>
+          <input type="number" id="t12" value="22" step="0.1" min="10" max="35">
+        </div>
+      </div>
+      <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Profile (n₁₂)</div>
+      <div class="prof-grid" id="profGrid12">
+        <button class="prof-btn" data-n="1.3" onclick="selProf(12,this)"><div class="pname">Soft V</div><div class="pval">n = 1.3</div></button>
+        <button class="prof-btn" data-n="1.5" onclick="selProf(12,this)"><div class="pname">U / Vintage</div><div class="pval">n = 1.5</div></button>
+        <button class="prof-btn" data-n="1.8" onclick="selProf(12,this)"><div class="pname">Oval C</div><div class="pval">n = 1.8</div></button>
+        <button class="prof-btn" data-n="2.0" onclick="selProf(12,this)"><div class="pname">Classic C</div><div class="pval">n = 2.0</div></button>
+        <button class="prof-btn" data-n="2.2" onclick="selProf(12,this)"><div class="pname">Modern C</div><div class="pval">n = 2.2</div></button>
+        <button class="prof-btn active-a" data-n="2.4" onclick="selProf(12,this)"><div class="pname">Thin C</div><div class="pval">n = 2.4</div></button>
+        <button class="prof-btn" data-n="2.6" onclick="selProf(12,this)"><div class="pname">D Shape</div><div class="pval">n = 2.6</div></button>
+        <button class="prof-btn" data-n="2.8" onclick="selProf(12,this)"><div class="pname">Wizard II</div><div class="pval">n = 2.8</div></button>
+        <button class="prof-btn" data-n="3.0" onclick="selProf(12,this)"><div class="pname">Flat D / Wiz</div><div class="pval">n = 3.0</div></button>
+      </div>
+      <input type="hidden" id="n12" value="2.4">
+    </div>
+
+    <!-- MID FRET -->
+    <div class="card">
+      <div class="card-head" style="margin-bottom:8px">
+        <span class="badge badge-b">CUSTOM</span> Intermediate Fret
+      </div>
+      <div class="mid-row">
+        <label>Calculate fret #</label>
+        <input type="number" id="midFret" value="7" min="1" max="24">
+        <span class="mid-info">Interpolated</span>
+      </div>
+    </div>
+
+    <button class="calc-btn" onclick="calculate()">⬡ Calculate</button>
+  </div>
+
+  <!-- RIGHT (viz + results) -->
+  <div class="right">
+    <div class="viz" id="vizArea" style="flex-direction:column;gap:0;padding:0">
+      <!-- row labels -->
+      <div style="display:grid;grid-template-columns:80px 1fr 1fr 1fr;border-bottom:1px solid var(--border)">
+        <div style="padding:8px 12px;font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;border-right:1px solid var(--border);display:flex;align-items:center">Step</div>
+        <div style="padding:8px 12px;font-size:9px;color:var(--g);text-transform:uppercase;letter-spacing:1px;border-right:1px solid var(--border)">Fret 1</div>
+        <div style="padding:8px 12px;font-size:9px;color:var(--blue);text-transform:uppercase;letter-spacing:1px;border-right:1px solid var(--border)" id="midColLabel">Fret 7</div>
+        <div style="padding:8px 12px;font-size:9px;color:var(--amber);text-transform:uppercase;letter-spacing:1px">Fret 12</div>
+      </div>
+      <!-- Step 1 row -->
+      <div style="display:grid;grid-template-columns:80px 1fr 1fr 1fr;border-bottom:1px solid var(--border)">
+        <div style="padding:10px 12px;font-size:9px;color:var(--t2);border-right:1px solid var(--border);display:flex;align-items:center;flex-direction:column;justify-content:center;gap:4px">
+          <span style="font-size:16px">①</span>
+          <span style="text-transform:uppercase;letter-spacing:.5px;color:var(--t3)">Primary</span>
+        </div>
+        <div style="padding:10px;border-right:1px solid var(--border)"><canvas id="c1s1" style="width:100%;height:100px;display:block"></canvas></div>
+        <div style="padding:10px;border-right:1px solid var(--border)"><canvas id="cmids1" style="width:100%;height:100px;display:block"></canvas></div>
+        <div style="padding:10px"><canvas id="c12s1" style="width:100%;height:100px;display:block"></canvas></div>
+      </div>
+      <!-- Step 2 row -->
+      <div style="display:grid;grid-template-columns:80px 1fr 1fr 1fr">
+        <div style="padding:10px 12px;font-size:9px;color:var(--t2);border-right:1px solid var(--border);display:flex;align-items:center;flex-direction:column;justify-content:center;gap:4px">
+          <span style="font-size:16px">②</span>
+          <span style="text-transform:uppercase;letter-spacing:.5px;color:var(--t3)">Secondary</span>
+        </div>
+        <div style="padding:10px;border-right:1px solid var(--border)"><canvas id="c1s2" style="width:100%;height:100px;display:block"></canvas></div>
+        <div style="padding:10px;border-right:1px solid var(--border)"><canvas id="cmids2" style="width:100%;height:100px;display:block"></canvas></div>
+        <div style="padding:10px"><canvas id="c12s2" style="width:100%;height:100px;display:block"></canvas></div>
+      </div>
+      <!-- legend -->
+      <div style="padding:8px 12px;border-top:1px solid var(--border);display:flex;gap:14px">
+        <div class="leg"><div class="leg-line" style="background:#ff9f43"></div>Primary 45°</div>
+        <div class="leg"><div class="leg-line" style="background:#a29bfe"></div>22.5° secondary</div>
+        <div class="leg"><div class="leg-line" style="background:#fd79a8"></div>67.5° secondary</div>
+        <div class="leg"><div class="leg-line" style="background:#ffd700;height:3px"></div>Measurement points</div>
+      </div>
+    </div>
+    <div class="results" id="results">
+      <div class="empty-state">
+        <div class="big">⬡</div>
+        <p>Set parameters and press<br><strong>Calculate</strong></p>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /calc-panel -->
+
+<!-- ══ LIBRARY TAB ══ -->
+<div class="lib-panel" id="libPanel">
+  <div class="lib-toolbar">
+    <input class="lib-search" type="text" id="libSearch" placeholder="Search profiles..." oninput="filterLib()">
+    <div class="filter-btns">
+      <button class="filter-btn active" data-f="all" onclick="setFilter(this,'all')">All</button>
+      <button class="filter-btn" data-f="6" onclick="setFilter(this,'6')">6 str</button>
+      <button class="filter-btn" data-f="7" onclick="setFilter(this,'7')">7 str</button>
+      <button class="filter-btn" data-f="8" onclick="setFilter(this,'8')">8 str</button>
+    </div>
+  </div>
+  <div class="lib-body" id="libBody"></div>
+</div>
+
+</div><!-- /body-wrap -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// LIBRARY DATA
+// W1/W12 derived from W_nut, W_last, frets via fret position formula
+// T values directly from manufacturer specs
+// n values: expert estimation (not published by manufacturers)
+// Sources: Ibanez official wiki, Gibson/Fender/PRS/Schecter spec sheets
+// ═══════════════════════════════════════════════════
+
+function fretW(wNut, wLast, frets, targetFret, scaleLen) {
+  // Use fret position formula for accurate interpolation
+  const posTarget = scaleLen * (1 - Math.pow(2, -targetFret/12));
+  const posLast   = scaleLen * (1 - Math.pow(2, -frets/12));
+  return wNut + (wLast - wNut) * (posTarget / posLast);
+}
+
+const LIBRARY = {
+  "Ibanez": [
+    // ── 6-string ──
+    { name:"Wizard (1989–2002)", str:6, frets:22, wNut:43, wLast:56, scale:648, T1:17, T12:20, n1:3.0, n12:3.0,
+      note:"Original Wizard. Extremely thin — 17mm at nut. Reference data: Ibanez wiki." },
+    { name:"Wizard II", str:6, frets:22, wNut:43, wLast:56, scale:648, T1:19, T12:21, n1:2.8, n12:2.8,
+      note:"2mm thicker than original. Standard on many RG models 1997–2010." },
+    { name:"Wizard III", str:6, frets:24, wNut:43, wLast:58, scale:648, T1:19, T12:21, n1:2.8, n12:2.8,
+      note:"Current standard RG neck. 2011–present." },
+    { name:"Wizard HP", str:6, frets:24, wNut:43, wLast:58, scale:648, T1:18, T12:20, n1:2.9, n12:3.0,
+      note:"High Performance — slightly thinner than Wizard III. Prestige models." },
+    { name:"Super Wizard HP", str:6, frets:24, wNut:43, wLast:58, scale:648, T1:17, T12:19, n1:3.0, n12:3.0,
+      note:"Thinnest production Ibanez neck. J-Custom & top Prestige." },
+    { name:"Nitro Wizard", str:6, frets:24, wNut:43, wLast:58, scale:648, T1:19, T12:21, n1:2.8, n12:2.8,
+      note:"RGD / baritone range. Same dims as Wizard III." },
+    { name:"AZ Oval C", str:6, frets:22, wNut:42, wLast:56.4, scale:648, T1:20.5, T12:22.5, n1:2.0, n12:2.0,
+      note:"More traditional feel. AZ series 2018–present." },
+    { name:"Wizard C", str:6, frets:22, wNut:42, wLast:57, scale:648, T1:21, T12:22, n1:2.2, n12:2.2,
+      note:"Slightly chunkier C shape. 2021–present." },
+    { name:"Wizard Multiscale", str:6, frets:24, wNut:43, wLast:58, scale:641, T1:18, T12:20, n1:2.9, n12:3.0,
+      note:"Scale 648→635mm. Width same as Wizard III." },
+    // ── 7-string ──
+    { name:"Wizard II-7", str:7, frets:24, wNut:48, wLast:68, scale:648, T1:19, T12:21, n1:2.8, n12:2.8,
+      note:"Standard 7-str from 2010+. 19mm thin for a 7-string." },
+    { name:"Wizard III-7", str:7, frets:24, wNut:48, wLast:68, scale:648, T1:19, T12:21, n1:2.8, n12:2.8,
+      note:"Current 7-str standard." },
+    { name:"Wizard III-7 Multiscale", str:7, frets:24, wNut:48, wLast:68, scale:667, T1:19, T12:21, n1:2.8, n12:2.8,
+      note:"686→648mm multiscale. Data: Ibanez wiki." },
+    { name:"Nitro Wizard-7", str:7, frets:24, wNut:48, wLast:68, scale:648, T1:19, T12:21, n1:2.8, n12:2.8,
+      note:"RGD7 baritone range." },
+    { name:"Wizard-7 Prestige", str:7, frets:24, wNut:48, wLast:68, scale:648, T1:19, T12:21, n1:2.8, n12:2.8,
+      note:"Top prestige 7-string." },
+    // ── 8-string ──
+    { name:"Wizard II-8", str:8, frets:24, wNut:55, wLast:80, scale:686, T1:20, T12:21.5, n1:2.9, n12:2.9,
+      note:"Standard 8-str. 27\" scale." },
+    { name:"Nitro Wizard-8", str:8, frets:24, wNut:55, wLast:80, scale:686, T1:20, T12:21.5, n1:2.9, n12:2.9,
+      note:"RGD8 range. 27\" scale." },
+    { name:"Wizard-8", str:8, frets:24, wNut:55, wLast:80, scale:686, T1:19, T12:21, n1:3.0, n12:3.0,
+      note:"Thinnest 8-string. RG8 models 2019+." },
+  ],
+  "Gibson": [
+    { name:"50s Rounded C", str:6, frets:22, wNut:43, wLast:55, scale:628, T1:22, T12:24.5, n1:2.0, n12:2.0,
+      note:"Chunky vintage feel. LP Standard 50s, ES-335 etc. ~.860\"/.960\" at frets 1/12." },
+    { name:"60s Slim Taper", str:6, frets:22, wNut:43, wLast:55, scale:628, T1:19.5, T12:22, n1:2.3, n12:2.4,
+      note:"Thin asymmetric taper. LP Standard 60s. ~.765\"/.865\"." },
+    { name:"Vintage '59 / R9", str:6, frets:22, wNut:43, wLast:55, scale:628, T1:23.5, T12:25.5, n1:1.8, n12:1.9,
+      note:"Full fat C. Historic reissues. Spec from Murphy Lab measurements." },
+    { name:"Memphis Slim Taper", str:6, frets:22, wNut:43, wLast:55, scale:628, T1:19, T12:21.5, n1:2.4, n12:2.4,
+      note:"ES-339/335 slim. Similar to 60s Slim but slightly thinner." },
+  ],
+  "Fender": [
+    { name:"Modern C", str:6, frets:22, wNut:42, wLast:54, scale:648, T1:20.8, T12:23.1, n1:2.2, n12:2.2,
+      note:"Current Player/Professional standard. ~.820\"/.910\". Most common Fender shape." },
+    { name:"Deep C", str:6, frets:21, wNut:42, wLast:54, scale:648, T1:21.6, T12:24.1, n1:2.1, n12:2.1,
+      note:"Rounder bottom than Modern C. American Ultra series." },
+    { name:"60s C", str:6, frets:21, wNut:42, wLast:54, scale:648, T1:20.8, T12:24.6, n1:2.0, n12:2.0,
+      note:"Vintage slab C with more taper. ~.820\"/.970\"." },
+    { name:"Soft V", str:6, frets:21, wNut:42, wLast:54, scale:648, T1:21.6, T12:25.1, n1:1.3, n12:1.4,
+      note:"Subtle V profile. American Original 50s Strat." },
+    { name:"50s U", str:6, frets:21, wNut:42, wLast:54, scale:648, T1:23, T12:25.4, n1:1.5, n12:1.5,
+      note:"Full chunky U. Vintage reissues. ~.905\"/.998\"." },
+  ],
+  "PRS": [
+    { name:"Pattern Thin", str:6, frets:22, wNut:43, wLast:52, scale:635, T1:20.1, T12:22.2, n1:2.2, n12:2.3,
+      note:"Slim C. CE24, S2 Standard, many Core models. ~.790\"/.875\"." },
+    { name:"Pattern (Wide Fat)", str:6, frets:22, wNut:43, wLast:52, scale:635, T1:21, T12:24.2, n1:2.0, n12:2.0,
+      note:"Fuller C. Custom 24 standard. ~.825\"/.953\"." },
+    { name:"Pattern Vintage", str:6, frets:22, wNut:43, wLast:52, scale:635, T1:22, T12:25, n1:1.9, n12:1.9,
+      note:"Rounder vintage feel. McCarty, Hollowbody. ~.865\"/.984\"." },
+    { name:"Wide Thin (SE)", str:6, frets:22, wNut:43, wLast:52, scale:635, T1:20.6, T12:22.6, n1:2.3, n12:2.3,
+      note:"SE series budget line. Slightly asymmetric in practice." },
+  ],
+  "Schecter": [
+    { name:"Ultra Thin C (6str)", str:6, frets:24, wNut:42, wLast:54, scale:648, T1:19, T12:20, n1:2.6, n12:2.7,
+      note:"Very thin for a C. Hellraiser, Omen. Schecter spec sheet." },
+    { name:"Thin C (6str)", str:6, frets:24, wNut:42, wLast:54, scale:648, T1:20, T12:22, n1:2.4, n12:2.4,
+      note:"Standard Schecter C. Most mid-range models." },
+    { name:"Ultra Thin C (7str)", str:7, frets:24, wNut:50, wLast:66, scale:648, T1:19, T12:20, n1:2.6, n12:2.7,
+      note:"7-string Hellraiser / Banshee." },
+    { name:"Ultra Thin C (8str)", str:8, frets:24, wNut:54, wLast:72, scale:686, T1:19, T12:20, n1:2.7, n12:2.8,
+      note:"8-string range. 27\" scale." },
+  ],
+  "ESP / LTD": [
+    { name:"Extra Thin U (6str)", str:6, frets:24, wNut:42, wLast:54, scale:648, T1:19, T12:21, n1:1.6, n12:1.7,
+      note:"ESP/LTD signature thin U. EC/M series. Slim but rounder bottom than Wizard." },
+    { name:"Thin U (6str)", str:6, frets:24, wNut:42, wLast:54, scale:648, T1:20, T12:22, n1:1.7, n12:1.8,
+      note:"Standard LTD U shape. MH, H series." },
+    { name:"Extra Thin U (7str)", str:7, frets:24, wNut:48, wLast:64, scale:648, T1:19, T12:21, n1:1.6, n12:1.7,
+      note:"LTD 7-string. H-1007 etc." },
+  ],
+};
+
+// ═══════════════════════════════════════════════════
+// MATH CORE
+// ═══════════════════════════════════════════════════
+
+function seY(x, a, b, n) {
+  const r = Math.abs(x/a);
+  if(r >= 1) return 0;
+  return b * Math.pow(1 - Math.pow(r, n), 1/n);
+}
+
+function findTangentPt(a, b, n, angleDeg) {
+  const targetSlope = -Math.tan(angleDeg * Math.PI / 180);
+  const steps = 12000;
+  let bx = a*.5, by = 0, bd = Infinity;
+  for(let i = 1; i < steps; i++) {
+    const x = (i/steps)*a*.9999;
+    const r = x/a;
+    const inner = 1 - Math.pow(r, n);
+    if(inner <= 0) continue;
+    const dydx = -b * Math.pow(inner, 1/n-1) * Math.pow(r, n-1) * (1/a);
+    const d = Math.abs(dydx - targetSlope);
+    if(d < bd){ bd=d; bx=x; by=seY(x,a,b,n); }
+  }
+  return {x:bx, y:by};
+}
+
+function tangentIntersect(px, py, a, b, slope) {
+  const ySide = py + slope*(a - px);
+  const xBack = Math.abs(slope)>1e-10 ? px + (b - py)/slope : Infinity;
+  return {ySide, xBack};
+}
+
+function intersectLines(p1x,p1y,s1, p2x,p2y,s2) {
+  // y = s1*(x-p1x)+p1y = s2*(x-p2x)+p2y
+  if(Math.abs(s1-s2)<1e-10) return null;
+  const x = (s2*p2x - p2y - s1*p1x + p1y)/(s2-s1);
+  const y = s1*(x-p1x)+p1y;
+  return {x,y};
+}
+
+function dist2d(ax,ay,bx,by){ return Math.sqrt((bx-ax)**2+(by-ay)**2); }
+
+function computeFacets(W, T, n) {
+  const a = W/2, b = T;
+  const P45  = findTangentPt(a,b,n,45);
+  const P225 = findTangentPt(a,b,n,22.5);
+  const P675 = findTangentPt(a,b,n,67.5);
+
+  const s45  = -1;
+  const s225 = -Math.tan(22.5*Math.PI/180);
+  const s675 = -Math.tan(67.5*Math.PI/180);
+
+  const i45  = tangentIntersect(P45.x,  P45.y,  a, b, s45);
+  const i225 = tangentIntersect(P225.x, P225.y, a, b, s225);
+  const i675 = tangentIntersect(P675.x, P675.y, a, b, s675);
+
+  const C_side = Math.max(0, i45.ySide);
+  const C_back = Math.min(a, Math.max(0, i45.xBack));
+
+  // Corners of primary facet on the blank (right side)
+  const cornerSide = { x: a,      y: C_side }; // primary meets side wall
+  const cornerBack = { x: C_back, y: b      }; // primary meets back wall
+
+  const x225_on_45 = intersectLines(P45.x,P45.y,s45, P225.x,P225.y,s225);
+  const x675_on_45 = intersectLines(P45.x,P45.y,s45, P675.x,P675.y,s675);
+
+  // ── Step 2: secondary facet endpoints ──
+  // 22.5° facet: 22.5° angle TO THE BACK → runs from back wall to primary facet
+  //   End on back wall (y=b): x coordinate
+  const back_225 = P225.x + (b - P225.y) / s225;
+  const C_back_225 = Math.min(a, Math.max(0, back_225)); // x from center along back
+  //   End on primary facet: distance from corner B
+  const D_225_from_B = x225_on_45
+    ? dist2d(cornerBack.x, cornerBack.y, x225_on_45.x, x225_on_45.y) : null;
+
+  // 67.5° facet: 67.5° angle TO THE SIDE → runs from side wall to primary facet
+  //   End on side wall (x=a): y coordinate
+  const side_675 = P675.y + s675 * (a - P675.x);
+  const C_side_675 = Math.max(0, side_675); // y down from FB corner on side wall
+  //   End on primary facet: distance from corner A
+  const D_675_from_A = x675_on_45
+    ? dist2d(cornerSide.x, cornerSide.y, x675_on_45.x, x675_on_45.y) : null;
+
+  // Keep for backward compat / canvas use
+  const C_side_225 = C_side_675; // 67.5° hits the side wall
+  const C_back_675 = C_back_225; // 22.5° hits the back wall
+  const D_225_on_primary = D_225_from_B;
+  const D_675_on_primary = D_675_from_A;
+
+  const primaryLen = dist2d(cornerSide.x, cornerSide.y, cornerBack.x, cornerBack.y);
+
+  return {
+    a, b, n,
+    C_side, C_back,
+    cornerSide, cornerBack, primaryLen,
+    P45, s45,
+    P225, s225,
+    C_back_225, x225_on_45, D_225_from_B,
+    P675, s675,
+    C_side_675, x675_on_45, D_675_from_A,
+    // aliases for canvas compat
+    C_side_225, C_back_675, D_225_on_primary, D_675_on_primary,
+  };
+}
+
+function lerp(a,b,t){ return a+(b-a)*t; }
+
+// ═══════════════════════════════════════════════════
+// CANVAS DRAWING
+// ═══════════════════════════════════════════════════
+
+// ── shared canvas setup ──
+function setupCanvas(id) {
+  const canvas = document.getElementById(id);
+  if(!canvas) return null;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width  = canvas.offsetWidth  * dpr;
+  canvas.height = canvas.offsetHeight * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0,0,canvas.offsetWidth,canvas.offsetHeight);
+  return { ctx, ow: canvas.offsetWidth, oh: canvas.offsetHeight };
+}
+
+function makeCoords(ow, oh, a, b) {
+  const pad = 20;
+  const sc = Math.min((ow-pad*2)/(a*2+4), (oh-pad*2)/(b+4));
+  const ox = ow/2, oy = pad+2;
+  return {
+    sc,
+    sx: x => ox + x*sc,
+    sy: y => oy + y*sc,
+    ox, oy
+  };
+}
+
+function drawBlankRect(ctx, f, C, dims) {
+  const {sx,sy} = dims;
+  const {a,b} = f;
+  ctx.strokeStyle='#2e3430';ctx.lineWidth=1;ctx.setLineDash([]);
+  ctx.strokeRect(sx(-a),sy(0),a*2*dims.sc,b*dims.sc);
+  // centerline
+  ctx.strokeStyle='#1e2a20';ctx.lineWidth=1;ctx.setLineDash([3,6]);
+  ctx.beginPath();ctx.moveTo(dims.ox,sy(0)-4);ctx.lineTo(dims.ox,sy(b)+4);ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function drawCurve(ctx, f, dims, color) {
+  const {sx,sy} = dims;
+  const {a,b,n} = f;
+  ctx.beginPath();
+  for(let i=0;i<=400;i++){
+    const x=-a+(2*a*i/400), y=seY(x,a,b,n);
+    i===0?ctx.moveTo(sx(x),sy(y)):ctx.lineTo(sx(x),sy(y));
+  }
+  ctx.strokeStyle=color;ctx.lineWidth=2;ctx.stroke();
+  // fingerboard line
+  ctx.strokeStyle=color+'28';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(sx(-a),sy(0));ctx.lineTo(sx(a),sy(0));ctx.stroke();
+}
+
+function clipTangentToBounds(px,py,slope,a,b){
+  const tVals=[-a-px, a-px];
+  if(Math.abs(slope)>1e-10) tVals.push((0-py)/slope,(b-py)/slope);
+  return tVals.map(t=>({x:px+t,y:py+slope*t}))
+    .filter(p=>p.x>=-a-.05&&p.x<=a+.05&&p.y>=-.05&&p.y<=b+.05);
+}
+
+function drawLine(ctx,sx,sy,pts,color,lw,dash){
+  if(pts.length<2)return;
+  ctx.setLineDash(dash||[]);
+  ctx.strokeStyle=color;ctx.lineWidth=lw;
+  ctx.beginPath();ctx.moveTo(sx(pts[0].x),sy(pts[0].y));
+  ctx.lineTo(sx(pts[pts.length-1].x),sy(pts[pts.length-1].y));
+  ctx.stroke();ctx.setLineDash([]);
+}
+
+function dot(ctx,sx,sy,x,y,color,r){
+  ctx.fillStyle=color;ctx.beginPath();
+  ctx.arc(sx(x),sy(y),r,0,Math.PI*2);ctx.fill();
+}
+
+function dimLabel(ctx,sx,sy,x,y,text,align){
+  ctx.fillStyle='#5a6a5a';ctx.font='7.5px DM Mono,monospace';
+  ctx.textAlign=align||'center';
+  ctx.fillText(text,sx(x),sy(y));
+}
+
+// ── STEP 1: Primary facets on rectangle ──
+function drawStep1(id, W, T, n, accentColor) {
+  const s = setupCanvas(id); if(!s) return;
+  const {ctx,ow,oh} = s;
+  const f = computeFacets(W,T,n);
+  const {a,b} = f;
+  const dims = makeCoords(ow,oh,a,b);
+  const {sx,sy} = dims;
+
+  drawBlankRect(ctx,f,null,dims);
+  drawCurve(ctx,f,dims,accentColor+'40');
+
+  // Primary tangent lines
+  [1,-1].forEach(side => {
+    const pt = {x: side*f.P45.x, y: f.P45.y};
+    const slope = side < 0 ? -f.s45 : f.s45;
+    const pts = clipTangentToBounds(pt.x,pt.y,slope,a,b);
+    drawLine(ctx,sx,sy,pts,'#ff9f43',1.5,[4,4]);
+  });
+
+  // Corner of primary facet — right side
+  const cSide = f.cornerSide, cBack = f.cornerBack;
+
+  // Measurement dots
+  dot(ctx,sx,sy, a, 0,         '#ffd700', 3); // top corner
+  dot(ctx,sx,sy, a, f.C_side,  '#ff9f43', 3); // C_side point on side
+  dot(ctx,sx,sy, f.C_back, b,  '#ff9f43', 3); // C_back point on back
+  dot(ctx,sx,sy,-a, 0,         '#ffd700', 3);
+  dot(ctx,sx,sy,-a, f.C_side,  '#ff9f43', 3);
+  dot(ctx,sx,sy,-f.C_back, b, '#ff9f43', 3);
+
+  // Measurement lines with labels
+  // C_side: vertical line on right side
+  ctx.strokeStyle='#ff9f4366';ctx.lineWidth=1;ctx.setLineDash([2,3]);
+  ctx.beginPath();ctx.moveTo(sx(a)+12,sy(0));ctx.lineTo(sx(a)+12,sy(f.C_side));ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='#ff9f43';ctx.font='8px DM Mono,monospace';ctx.textAlign='left';
+  ctx.fillText(f.C_side.toFixed(1), sx(a)+14, sy(f.C_side/2)+3);
+
+  // C_back: horizontal line on bottom
+  ctx.strokeStyle='#ff9f4366';ctx.lineWidth=1;ctx.setLineDash([2,3]);
+  ctx.beginPath();ctx.moveTo(sx(0),sy(b)+10);ctx.lineTo(sx(f.C_back),sy(b)+10);ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='#ff9f43';ctx.textAlign='center';
+  ctx.fillText(f.C_back.toFixed(1), sx(f.C_back/2), sy(b)+18);
+
+  // W and T labels
+  ctx.fillStyle='#3a4a3a';ctx.textAlign='center';
+  ctx.fillText(`${W.toFixed(1)} mm`, dims.ox, sy(b)+28);
+  ctx.textAlign='right';
+  ctx.fillText(`${T.toFixed(1)}`, sx(-a)-3, sy(b/2)+3);
+}
+
+// ── STEP 2: Secondary facets on hexagon ──
+function drawStep2(id, W, T, n, accentColor) {
+  const s = setupCanvas(id); if(!s) return;
+  const {ctx, ow, oh} = s;
+  const f = computeFacets(W, T, n);
+  const {a, b} = f;
+  const dims = makeCoords(ow, oh, a, b);
+  const {sx, sy} = dims;
+
+  const cS = f.C_side, cB = f.C_back;
+
+  // ── hexagon fill ──
+  ctx.fillStyle = '#161a17';
+  ctx.beginPath();
+  ctx.moveTo(sx(-a), sy(0));  ctx.lineTo(sx(a),  sy(0));
+  ctx.lineTo(sx(a),  sy(cS)); ctx.lineTo(sx(cB), sy(b));
+  ctx.lineTo(sx(-cB),sy(b));  ctx.lineTo(sx(-a), sy(cS));
+  ctx.closePath(); ctx.fill();
+
+  // ── hexagon outline ──
+  ctx.strokeStyle = '#3a4a38'; ctx.lineWidth = 1.5; ctx.setLineDash([]);
+  ctx.beginPath();
+  ctx.moveTo(sx(-a), sy(0));  ctx.lineTo(sx(a),  sy(0));
+  ctx.lineTo(sx(a),  sy(cS)); ctx.lineTo(sx(cB), sy(b));
+  ctx.lineTo(sx(-cB),sy(b));  ctx.lineTo(sx(-a), sy(cS));
+  ctx.closePath(); ctx.stroke();
+
+  // ── target curve (faint) ──
+  drawCurve(ctx, f, dims, accentColor + '50');
+
+  // ── primary facet (orange solid) ──
+  ctx.strokeStyle = '#ff9f43'; ctx.lineWidth = 1.5; ctx.setLineDash([]);
+  [1,-1].forEach(sg => {
+    ctx.beginPath();
+    ctx.moveTo(sx(sg*a),  sy(cS));
+    ctx.lineTo(sx(sg*cB), sy(b));
+    ctx.stroke();
+  });
+
+  // ── clip a line (point + slope) to hexagon edges, return [p1, p2] or null ──
+  function clipLine(px, py, slope, sg) {
+    // hexagon edges on side sg:
+    //   side wall:     x = sg*a,   y in [0, cS]
+    //   primary facet: from (sg*a, cS) to (sg*cB, b)
+    //   back:          y = b,      x in [sg*cB .. 0]  (toward center)
+    //   top:           y = 0,      x in [-a .. a]
+    //   center line:   x = 0  (shared)
+
+    const pts = [];
+
+    function tryPush(x, y) {
+      // inside hexagon?
+      if (y < -0.1 || y > b + 0.1) return;
+      if (Math.abs(x) > a + 0.1) return;
+      // above primary facet on the sg side? check
+      // primary facet line y = cS + (b-cS)/(sg*cB - sg*a) * (x - sg*a)
+      const primY = cS + (b - cS) / (sg*cB - sg*a) * (x - sg*a);
+      // point must be on or above primary facet (y <= primY on that side region)
+      // but only relevant when x is in the primary region
+      if (x * sg >= Math.min(sg*cB, sg*a) - 0.1 && x * sg <= Math.max(sg*cB, sg*a) + 0.1) {
+        if (y > primY + 0.5) return; // below primary facet = outside hex
+      }
+      pts.push({x, y});
+    }
+
+    // intersect with x = sg*a (side wall)
+    { const xi = sg*a; const yi = py + slope*(xi - px); tryPush(xi, yi); }
+    // intersect with y = 0 (top)
+    if (Math.abs(slope) > 1e-9) { const xi = px - py/slope; tryPush(xi, 0); }
+    // intersect with y = b (back)
+    if (Math.abs(slope) > 1e-9) { const xi = px + (b - py)/slope; tryPush(xi, b); }
+    // intersect with x = 0 (center)
+    { const xi = 0; const yi = py + slope*(0 - px); tryPush(xi, yi); }
+    // intersect with primary facet line
+    {
+      const primSlope = (b - cS) / (sg*cB - sg*a);
+      if (Math.abs(slope - primSlope) > 1e-9) {
+        const xi = (cS - py - primSlope*sg*a + slope*px) / (slope - primSlope);
+        const yi = py + slope*(xi - px);
+        tryPush(xi, yi);
+      }
+    }
+
+    if (pts.length < 2) return null;
+    // pick the two with largest distance
+    let best = null, bestD = 0;
+    for (let i = 0; i < pts.length; i++)
+      for (let j = i+1; j < pts.length; j++) {
+        const d = (pts[i].x-pts[j].x)**2 + (pts[i].y-pts[j].y)**2;
+        if (d > bestD) { bestD = d; best = [pts[i], pts[j]]; }
+      }
+    return best;
+  }
+
+  // ── draw secondary tangent lines clipped to hexagon ──
+  [1,-1].forEach(sg => {
+    // 22.5°
+    const seg225 = clipLine(sg*f.P225.x, f.P225.y, sg < 0 ? -f.s225 : f.s225, sg);
+    if (seg225) {
+      ctx.strokeStyle = '#a29bfe'; ctx.lineWidth = 1.5; ctx.setLineDash([3,4]);
+      ctx.beginPath();
+      ctx.moveTo(sx(seg225[0].x), sy(seg225[0].y));
+      ctx.lineTo(sx(seg225[1].x), sy(seg225[1].y));
+      ctx.stroke(); ctx.setLineDash([]);
+    }
+    // 67.5°
+    const seg675 = clipLine(sg*f.P675.x, f.P675.y, sg < 0 ? -f.s675 : f.s675, sg);
+    if (seg675) {
+      ctx.strokeStyle = '#fd79a8'; ctx.lineWidth = 1.5; ctx.setLineDash([3,4]);
+      ctx.beginPath();
+      ctx.moveTo(sx(seg675[0].x), sy(seg675[0].y));
+      ctx.lineTo(sx(seg675[1].x), sy(seg675[1].y));
+      ctx.stroke(); ctx.setLineDash([]);
+    }
+  });
+
+  // ── 4 measurement points & labels ──
+  // All correctly computed intersections on the hexagon:
+  // 1. C_side_225: where 22.5° tangent hits the side wall (y coord, closer to FB)
+  // 2. C_back_675: where 67.5° tangent hits the back wall (x coord, closer to center)
+  // 3. x225_on_45: where 22.5° crosses the primary facet
+  // 4. x675_on_45: where 67.5° crosses the primary facet
+
+  // 22.5° facet: back wall → primary facet (angle to back = 22.5°)
+  const cb225 = f.C_back_225;   // x on back wall
+  // 67.5° facet: side wall → primary facet (angle to side = 67.5°)
+  const cs675 = f.C_side_675;   // y on side wall
+
+  [1,-1].forEach(sg => {
+    // corner A and B (faint orange reference)
+    dot(ctx,sx,sy, sg*a,  cS, '#ff9f4355', 3);
+    dot(ctx,sx,sy, sg*cB, b,  '#ff9f4355', 3);
+    // 22.5° facet endpoints (purple)
+    dot(ctx,sx,sy, sg*cb225,         b,               '#a29bfe', 4.5); // on back wall
+    if (f.x225_on_45)
+      dot(ctx,sx,sy, sg*f.x225_on_45.x, f.x225_on_45.y, '#a29bfe', 4.5); // on primary
+    // 67.5° facet endpoints (pink)
+    dot(ctx,sx,sy, sg*a,             cs675,           '#fd79a8', 4.5); // on side wall
+    if (f.x675_on_45)
+      dot(ctx,sx,sy, sg*f.x675_on_45.x, f.x675_on_45.y, '#fd79a8', 4.5); // on primary
+  });
+
+  // ── labels (right side only) ──
+  ctx.font = '8px DM Mono,monospace';
+
+  // 22.5°: label on back wall
+  ctx.fillStyle = '#a29bfe'; ctx.textAlign = 'center';
+  ctx.fillText(cb225.toFixed(1), sx(cb225/2), sy(b)+12);
+
+  // 22.5°: D from cornerB along primary
+  if (f.x225_on_45 && f.D_225_from_B != null) {
+    const mx = (cB + f.x225_on_45.x) / 2;
+    const my = (b  + f.x225_on_45.y) / 2;
+    ctx.fillStyle = '#a29bfe'; ctx.textAlign = 'right';
+    ctx.fillText(f.D_225_from_B.toFixed(1), sx(mx)-3, sy(my)-3);
+    ctx.textAlign = 'left';
+    ctx.fillText(f.D_225_from_B.toFixed(1), sx(-mx)+3, sy(my)-3);
+  }
+
+  // 67.5°: label on side wall
+  ctx.fillStyle = '#fd79a8'; ctx.textAlign = 'left';
+  ctx.fillText(cs675.toFixed(1), sx(a)+4, sy(cs675));
+
+  // 67.5°: D from cornerA along primary
+  if (f.x675_on_45 && f.D_675_from_A != null) {
+    const mx = (a + f.x675_on_45.x) / 2;
+    const my = (cS + f.x675_on_45.y) / 2;
+    ctx.fillStyle = '#fd79a8'; ctx.textAlign = 'left';
+    ctx.fillText(f.D_675_from_A.toFixed(1), sx(mx)+3, sy(my)-3);
+    ctx.textAlign = 'right';
+    ctx.fillText(f.D_675_from_A.toFixed(1), sx(-mx)-3, sy(my)-3);
+  }
+
+  // W label
+  ctx.fillStyle = '#3a4a3a'; ctx.textAlign = 'center';
+  ctx.fillText(`${W.toFixed(1)} mm`, dims.ox, sy(b)+22);
+}
+
+// ═══════════════════════════════════════════════════
+// RESULT RENDERING
+// ═══════════════════════════════════════════════════
+
+function fmt(v){if(v===null||v===undefined)return'—';const n=Number(v);return isNaN(n)?'—':n.toFixed(2)}
+
+function renderBlock(label, colorClass, W, T, n) {
+  const f = computeFacets(W, T, n);
+  const fromCornerSide = f.b - f.C_side;
+  const fromCornerBack = f.a - f.C_back;
+
+  return `<div class="rblock">
+    <div class="rblock-head">
+      <h3 class="${colorClass}">${label}</h3>
+      <span class="params">W=${W.toFixed(1)} · T=${T.toFixed(1)} · n=${n.toFixed(2)}</span>
+    </div>
+    <div class="rblock-body">
+
+      <div class="mcard" style="grid-column:1/-1;border-left:2px solid #ff9f43">
+        <h4 style="color:#ff9f43">Step 1 — Primary Facets · on rectangle blank</h4>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px">
+          <div class="markup-item">
+            <div class="mi-label">Down side<br>from FB corner</div>
+            <div class="mi-val ${colorClass}">${fmt(f.C_side)}</div>
+            <div class="mi-sub">mm</div>
+          </div>
+          <div class="markup-item">
+            <div class="mi-label">From center<br>along back</div>
+            <div class="mi-val ${colorClass}">${fmt(f.C_back)}</div>
+            <div class="mi-sub">mm</div>
+          </div>
+          <div class="markup-item">
+            <div class="mi-label">↑ From corner<br>along side</div>
+            <div class="mi-val">${fmt(fromCornerSide)}</div>
+            <div class="mi-sub">mm</div>
+          </div>
+          <div class="markup-item">
+            <div class="mi-label">← From corner<br>along back</div>
+            <div class="mi-val">${fmt(fromCornerBack)}</div>
+            <div class="mi-sub">mm</div>
+          </div>
+        </div>
+        <div style="margin-top:8px;font-size:9px;color:var(--t3)">
+          Primary facet length: ${fmt(f.primaryLen)} mm
+        </div>
+      </div>
+
+      <div class="mcard" style="border-left:2px solid #a29bfe">
+        <h4 style="color:#a29bfe">Step 2 — Secondary Facets · on hexagon after Step 1</h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+
+          <div class="markup-item" style="border:1px solid rgba(162,155,254,.2);border-radius:3px;padding:10px">
+            <div class="mi-label" style="color:#a29bfe">22.5° facet<br><span style="color:var(--t3)">← From center along back</span></div>
+            <div class="mi-val" style="color:#a29bfe">${fmt(f.C_back_225)}</div>
+            <div class="mi-sub">mm from center along back</div>
+          </div>
+
+          <div class="markup-item" style="border:1px solid rgba(162,155,254,.2);border-radius:3px;padding:10px">
+            <div class="mi-label" style="color:#a29bfe">22.5° facet<br><span style="color:var(--t3)">◣ along primary from corner B</span></div>
+            <div class="mi-val" style="color:#a29bfe">${fmt(f.D_225_from_B)}</div>
+            <div class="mi-sub">mm from corner B along primary</div>
+          </div>
+
+          <div class="markup-item" style="border:1px solid rgba(253,121,168,.2);border-radius:3px;padding:10px">
+            <div class="mi-label" style="color:#fd79a8">67.5° facet<br><span style="color:var(--t3)">↓ Down side from FB corner</span></div>
+            <div class="mi-val" style="color:#fd79a8">${fmt(f.C_side_675)}</div>
+            <div class="mi-sub">mm from FB corner down side</div>
+          </div>
+
+          <div class="markup-item" style="border:1px solid rgba(253,121,168,.2);border-radius:3px;padding:10px">
+            <div class="mi-label" style="color:#fd79a8">67.5° facet<br><span style="color:var(--t3)">◥ along primary from corner A</span></div>
+            <div class="mi-val" style="color:#fd79a8">${fmt(f.D_675_from_A)}</div>
+            <div class="mi-sub">mm from corner A along primary</div>
+          </div>
+
+        </div>
+        <div style="margin-top:8px;font-size:9px;color:var(--t3)">
+          Primary facet length: ${fmt(f.primaryLen)} mm &nbsp;·&nbsp;
+          Corner A = side∩primary &nbsp;·&nbsp; Corner B = back∩primary
+        </div>
+      </div>
+
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════
+// CALCULATE
+// ═══════════════════════════════════════════════════
+
+let currentMode = 'simple';
+
+function getW1W12() {
+  if(currentMode === 'simple') {
+    return {
+      W1:  parseFloat(document.getElementById('w1').value),
+      W12: parseFloat(document.getElementById('w12').value),
+    };
+  } else {
+    const wNut = parseFloat(document.getElementById('w_nut').value);
+    const wLast= parseFloat(document.getElementById('w_last').value);
+    const frets= parseInt(document.getElementById('frets').value);
+    const sc   = parseFloat(document.getElementById('scale_mm').value);
+    return {
+      W1:  fretW(wNut, wLast, frets, 1, sc),
+      W12: fretW(wNut, wLast, frets, 12, sc),
+    };
+  }
+}
+
+function getT1() {
+  return currentMode==='simple'
+    ? parseFloat(document.getElementById('t1').value)
+    : parseFloat(document.getElementById('t1b').value);
+}
+
+function calculate() {
+  const {W1,W12} = getW1W12();
+  const T1  = getT1();
+  const T12 = parseFloat(document.getElementById('t12').value);
+  const n1  = parseFloat(document.getElementById('n1').value);
+  const n12 = parseFloat(document.getElementById('n12').value);
+  const mid = Math.max(1, Math.min(24, parseInt(document.getElementById('midFret').value)||7));
+
+  if([W1,W12,T1,T12,n1,n12].some(isNaN)) { showToast('⚠ Check your input values'); return; }
+
+  const t = (mid-1)/11;
+  const Wm = lerp(W1,W12,t);
+  const Tm = lerp(T1,T12,t);
+  const nm = lerp(n1,n12,t);
+
+  document.getElementById('midColLabel').textContent = `Fret ${mid}`;
+
+  // Step 1 canvases — primary facets on rectangle
+  drawStep1('c1s1',   W1,  T1,  n1,  '#b6f06e');
+  drawStep1('cmids1', Wm,  Tm,  nm,  '#6ec6f0');
+  drawStep1('c12s1',  W12, T12, n12, '#f0b84a');
+
+  // Wire up lightbox clicks on all canvases
+  const lbMap = [
+    ['c1s1',   'Step 1 · Fret 1',         W1,  T1,  n1,  1, '#b6f06e'],
+    ['cmids1', 'Step 1 · Fret ' + mid,    Wm,  Tm,  nm,  1, '#6ec6f0'],
+    ['c12s1',  'Step 1 · Fret 12',        W12, T12, n12, 1, '#f0b84a'],
+    ['c1s2',   'Step 2 · Fret 1',         W1,  T1,  n1,  2, '#b6f06e'],
+    ['cmids2', 'Step 2 · Fret ' + mid,    Wm,  Tm,  nm,  2, '#6ec6f0'],
+    ['c12s2',  'Step 2 · Fret 12',        W12, T12, n12, 2, '#f0b84a'],
+  ];
+  lbMap.forEach(([id, title, W, T, n, step, col]) => {
+    const el = document.getElementById(id);
+    if(el) {
+      el.style.cursor = 'zoom-in';
+      el.onclick = () => openLB(title, W, T, n, step, col);
+    }
+  });
+
+  // Step 2 canvases — secondary facets on hexagon
+  drawStep2('c1s2',   W1,  T1,  n1,  '#b6f06e');
+  drawStep2('cmids2', Wm,  Tm,  nm,  '#6ec6f0');
+  drawStep2('c12s2',  W12, T12, n12, '#f0b84a');
+
+  document.getElementById('results').innerHTML =
+    renderBlock(`▶ Fret 1`,       'c-g', W1,  T1,  n1)  +
+    renderBlock(`◈ Fret ${mid}`,  'c-b', Wm,  Tm,  nm)  +
+    renderBlock(`▶ Fret 12`,      'c-a', W12, T12, n12);
+
+}
+
+
+// ═══════════════════════════════════════════════════
+// URL SHARE
+// ═══════════════════════════════════════════════════
+
+function buildParams() {
+  const mid = document.getElementById('midFret').value;
+  const n1  = document.getElementById('n1').value;
+  const n12 = document.getElementById('n12').value;
+  const T12 = document.getElementById('t12').value;
+
+  if(currentMode==='simple') {
+    return new URLSearchParams({
+      mode:'simple',
+      w1:  document.getElementById('w1').value,
+      t1:  document.getElementById('t1').value,
+      w12: document.getElementById('w12').value,
+      t12: T12, n1, n12, mid
+    });
+  } else {
+    return new URLSearchParams({
+      mode:'blank',
+      wnut:  document.getElementById('w_nut').value,
+      wlast: document.getElementById('w_last').value,
+      frets: document.getElementById('frets').value,
+      scale: document.getElementById('scale_mm').value,
+      t1:    document.getElementById('t1b').value,
+      t12:   T12, n1, n12, mid
+    });
+  }
+}
+
+function updateURL() {
+  const params = buildParams();
+  const url = window.location.pathname + '?' + params.toString();
+  window.history.replaceState(null,'',url);
+}
+
+function shareURL() {
+  const params = buildParams();
+  // Build shareable URL — works when file is served from a real domain
+  let base = window.location.href.split('?')[0];
+  // If running as srcdoc/blob, inform user to save file first
+  if(window.location.protocol === 'about:' || base.includes('srcdoc')) {
+    // Copy just the params so user can append manually
+    const paramStr = params.toString();
+    navigator.clipboard.writeText('?' + paramStr).then(()=>{
+      showToast('Params copied — append to your file URL');
+    }).catch(()=> showToast('Save the file to a server to use share links'));
+    return;
+  }
+  const url = base + '?' + params.toString();
+  navigator.clipboard.writeText(url).then(()=>{
+    const btn = document.getElementById('shareBtn');
+    btn.classList.add('copied');
+    btn.innerHTML = '<span>✓</span> Copied!';
+    showToast('Link copied to clipboard');
+    setTimeout(()=>{ btn.classList.remove('copied'); btn.innerHTML='<span>⇧</span> Share'; }, 2000);
+  });
+}
+
+function loadFromURL() {
+  let search = '';
+  try { search = window.location.search; } catch(e) { return; }
+  const p = new URLSearchParams(search);
+  if(!p.get('n1')) return;
+
+  const mode = p.get('mode')||'simple';
+  setMode(mode);
+
+  if(mode==='simple') {
+    setVal('w1',  p.get('w1'));
+    setVal('t1',  p.get('t1'));
+    setVal('w12', p.get('w12'));
+  } else {
+    setVal('w_nut',   p.get('wnut'));
+    setVal('w_last',  p.get('wlast'));
+    setVal('frets',   p.get('frets'));
+    setVal('scale_mm',p.get('scale'));
+    setVal('t1b',     p.get('t1'));
+  }
+  setVal('t12',     p.get('t12'));
+  setVal('midFret', p.get('mid'));
+
+  // set profiles
+  if(p.get('n1'))  { document.getElementById('n1').value=p.get('n1');   activateProfile(1,  p.get('n1'));  }
+  if(p.get('n12')) { document.getElementById('n12').value=p.get('n12'); activateProfile(12, p.get('n12')); }
+
+  setTimeout(calculate, 100);
+}
+
+function setVal(id, val) { if(val!==null) { const el=document.getElementById(id); if(el) el.value=val; } }
+
+function activateProfile(fret, nVal) {
+  const grid = document.getElementById('profile'+fret==='1'?'profGrid1':'profGrid12') ||
+               document.getElementById(fret===1?'profGrid1':'profGrid12');
+  if(!grid) return;
+  grid.querySelectorAll('.prof-btn').forEach(b=>{
+    b.classList.remove('active-g','active-a');
+    if(parseFloat(b.dataset.n)===parseFloat(nVal)) {
+      b.classList.add(fret===1?'active-g':'active-a');
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════════════════
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('calcPanel').classList.toggle('hidden', tab!=='calc');
+  document.getElementById('libPanel').classList.toggle('active', tab==='lib');
+  if(tab==='lib') renderLib();
+}
+
+function setMode(mode) {
+  currentMode = mode;
+  document.getElementById('modeSimple').classList.toggle('active', mode==='simple');
+  document.getElementById('modeBlank').classList.toggle('active', mode==='blank');
+  document.getElementById('sf1').classList.toggle('hidden', mode!=='simple');
+  document.getElementById('bf_top').classList.toggle('visible', mode!=='simple');
+}
+
+function selProf(fret, btn) {
+  const grid = document.getElementById(fret===1?'profGrid1':'profGrid12');
+  const cls  = fret===1?'active-g':'active-a';
+  grid.querySelectorAll('.prof-btn').forEach(b=>b.classList.remove('active-g','active-a'));
+  btn.classList.add(cls);
+  document.getElementById('n'+fret).value = btn.dataset.n;
+}
+
+// ═══════════════════════════════════════════════════
+// LIBRARY
+// ═══════════════════════════════════════════════════
+
+let libFilter = 'all';
+
+function setFilter(btn, val) {
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  libFilter = val;
+  renderLib();
+}
+
+function filterLib() { renderLib(); }
+
+// Global preset registry — avoids inline JSON in onclick attributes
+const PRESET_REGISTRY = {};
+
+function renderLib() {
+  const search = document.getElementById('libSearch').value.toLowerCase();
+  const body = document.getElementById('libBody');
+  let html = '';
+
+  for(const [brand, profiles] of Object.entries(LIBRARY)) {
+    const filtered = profiles.filter(p => {
+      const matchStr2 = libFilter==='all' || p.str===parseInt(libFilter);
+      const matchSearch = !search ||
+        p.name.toLowerCase().includes(search) ||
+        brand.toLowerCase().includes(search) ||
+        (p.note||'').toLowerCase().includes(search);
+      return matchStr2 && matchSearch;
+    });
+    if(filtered.length===0) continue;
+
+    const cards = filtered.map(p => {
+      const key = brand + '|' + p.name;
+      PRESET_REGISTRY[key] = p;
+      const safeKey = key.replace(/'/g, "\\'");
+      const w1  = fretW(p.wNut, p.wLast, p.frets, 1, p.scale);
+      const w12 = fretW(p.wNut, p.wLast, p.frets, 12, p.scale);
+      return `<div class="lib-card" onclick="loadPreset('${safeKey}')">
+        <div class="lib-card-name">${p.name}</div>
+        <div class="lib-card-str">${p.str}-string · ${p.frets} frets · ${p.scale}mm scale</div>
+        <div class="lib-dims">
+          <div class="lib-dim"><div class="dk">W nut</div><div class="dv">${p.wNut} mm</div></div>
+          <div class="lib-dim"><div class="dk">W last</div><div class="dv">${p.wLast} mm</div></div>
+          <div class="lib-dim"><div class="dk">W fret 1</div><div class="dv">${w1.toFixed(1)} mm</div></div>
+          <div class="lib-dim"><div class="dk">W fret 12</div><div class="dv">${w12.toFixed(1)} mm</div></div>
+          <div class="lib-dim"><div class="dk">T fret 1</div><div class="dv">${p.T1} mm</div></div>
+          <div class="lib-dim"><div class="dk">T fret 12</div><div class="dv">${p.T12} mm</div></div>
+          <div class="lib-dim"><div class="dk">n₁</div><div class="dv">${p.n1}</div></div>
+          <div class="lib-dim"><div class="dk">n₁₂</div><div class="dv">${p.n12}</div></div>
+        </div>
+        ${p.note?`<div class="lib-note" style="margin-top:8px">${p.note}</div>`:''}
+        <div class="load-hint">↗ Load →</div>
+      </div>`;
+    }).join('');
+
+    html += `<div class="lib-brand">
+      <div class="lib-brand-name">${brand}</div>
+      <div class="lib-cards">${cards}</div>
+    </div>`;
+  }
+
+  body.innerHTML = html || '<div style="color:var(--t3);padding:20px;text-align:center">No profiles match your filter.</div>';
+}
+
+function loadPreset(key) {
+  const p = PRESET_REGISTRY[key];
+  if(!p){ showToast('⚠ Preset not found'); return; }
+  const w1  = fretW(p.wNut, p.wLast, p.frets, 1, p.scale);
+  const w12 = fretW(p.wNut, p.wLast, p.frets, 12, p.scale);
+
+  // Switch to blank mode and fill blank fields
+  setMode('blank');
+  setVal('w_nut',    p.wNut);
+  setVal('w_last',   p.wLast);
+  setVal('frets',    p.frets);
+  setVal('scale_mm', p.scale);
+  setVal('t1b',      p.T1);
+  setVal('t12',      p.T12);
+  setVal('midFret',  '7');
+
+  // Also show computed W1/W12 as reference
+  setVal('w1',  w1.toFixed(1));
+  setVal('w12', w12.toFixed(1));
+  setVal('t1',  p.T1);
+
+  // Set profiles
+  document.getElementById('n1').value  = p.n1;
+  document.getElementById('n12').value = p.n12;
+  activateProfile(1,  p.n1);
+  activateProfile(12, p.n12);
+
+  // Switch to calculator tab and calculate
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab')[0].classList.add('active');
+  document.getElementById('calcPanel').classList.remove('hidden');
+  document.getElementById('libPanel').classList.remove('active');
+
+  setTimeout(calculate, 50);
+  showToast(`Loaded: ${p.name}`);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+
+window.addEventListener('load', () => {
+  // Draw placeholder canvases
+  ['c1s1','cmids1','c12s1','c1s2','cmids2','c12s2'].forEach(id=>{
+    const c=document.getElementById(id);
+    if(!c) return;
+    const dpr=window.devicePixelRatio||1;
+    c.width=c.offsetWidth*dpr;
+    c.height=c.offsetHeight*dpr;
+    const ctx=c.getContext('2d');
+    ctx.scale(dpr,dpr);
+    ctx.fillStyle='#0e1210';
+    ctx.fillRect(0,0,c.offsetWidth,c.offsetHeight);
+    ctx.fillStyle='#2a3028';
+    ctx.font='8px DM Mono';
+    ctx.textAlign='center';
+    ctx.fillText('Calculate',c.offsetWidth/2,c.offsetHeight/2);
+  });
+
+  loadFromURL();
+  // Auto-calculate on page load with defaults
+  setTimeout(calculate, 50);
+});
+
+// ═══════════════════════════════════════════════════
+// LIGHTBOX
+// ═══════════════════════════════════════════════════
+
+function openLB(title, W, T, n, step, accentColor) {
+  const overlay = document.getElementById('lbOverlay');
+  const lbCanvas = document.getElementById('lbCanvas');
+  const titleEl  = document.getElementById('lbTitle');
+
+  titleEl.textContent = title;
+  // Show overlay first so canvas has layout dimensions
+  overlay.classList.add('open');
+
+  requestAnimationFrame(() => {
+    // Now lbCanvas is visible and has real offsetWidth/offsetHeight
+    const tmpId = '__lb_tmp__';
+    lbCanvas.id = tmpId;
+    if(step === 1) drawStep1(tmpId, W, T, n, accentColor);
+    else           drawStep2(tmpId, W, T, n, accentColor);
+    lbCanvas.id = 'lbCanvas';
+  });
+}
+
+function closeLB(e) {
+  document.getElementById('lbOverlay').classList.remove('open');
+}
+
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape') closeLB();
+});
+
+window.addEventListener('resize', ()=>{
+  // redraw if results exist
+  if(document.querySelector('.rblock')) setTimeout(calculate,50);
+});
+</script>
+
+<!-- LIGHTBOX -->
+<div class="lb-overlay" id="lbOverlay" onclick="closeLB(event)">
+  <div class="lb-wrap" onclick="event.stopPropagation()">
+    <button class="lb-close" onclick="closeLB()">✕</button>
+    <div class="lb-title" id="lbTitle"></div>
+    <div class="lb-canvas-wrap">
+      <canvas id="lbCanvas"></canvas>
+    </div>
+  </div>
+</div>
+</body>
+</html>
