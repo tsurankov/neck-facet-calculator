@@ -659,11 +659,20 @@ canvas{cursor:zoom-in}
         <button class="prof-btn" data-n="2.4" onclick="selProf(1,this)"><div class="pname">Thin C</div><div class="pval">n = 2.4</div></button>
         <button class="prof-btn" data-n="2.5" onclick="selProf(1,this)"><div class="pname">Thin–D</div><div class="pval">n = 2.5</div></button>
         <button class="prof-btn" data-n="2.6" onclick="selProf(1,this)"><div class="pname">D Shape</div><div class="pval">n = 2.6</div></button>
-        <button class="prof-btn" data-n="2.7" onclick="selProf(1,this)"><div class="pname">D–Wiz</div><div class="pval">n = 2.7</div></button>
-        <button class="prof-btn" data-n="2.8" onclick="selProf(1,this)"><div class="pname">Wizard II</div><div class="pval">n = 2.8</div></button>
-        <button class="prof-btn" data-n="3.0" onclick="selProf(1,this)"><div class="pname">Flat D / Wiz</div><div class="pval">n = 3.0</div></button>
+        <button class="prof-btn" data-n="2.7" onclick="selProf(1,this)"><div class="pname">D–Sorc</div><div class="pval">n = 2.7</div></button>
+        <button class="prof-btn" data-n="2.8" onclick="selProf(1,this)"><div class="pname">iSorcerer II</div><div class="pval">n = 2.8</div></button>
+        <button class="prof-btn" data-n="3.0" onclick="selProf(1,this)"><div class="pname">Flat D / Sorc</div><div class="pval">n = 3.0</div></button>
       </div>
       <input type="hidden" id="n1" value="2.2">
+      <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+        <span style="font-size:9px;color:var(--t3);white-space:nowrap">Fine-tune n₁</span>
+        <input type="range" id="n1range" min="1.2" max="3.2" step="0.01" value="2.2"
+          style="flex:1;accent-color:var(--g);cursor:pointer"
+          oninput="syncN(1,this.value)">
+        <input type="number" id="n1fine" value="2.2" min="1.2" max="3.2" step="0.01"
+          style="width:52px;background:var(--s2);border:1px solid var(--border);border-radius:3px;color:var(--text);font-size:11px;padding:3px 5px;text-align:center"
+          oninput="syncN(1,this.value)">
+      </div>
     </div>
 
     <!-- FRET 12 -->
@@ -692,11 +701,20 @@ canvas{cursor:zoom-in}
         <button class="prof-btn active-a" data-n="2.4" onclick="selProf(12,this)"><div class="pname">Thin C</div><div class="pval">n = 2.4</div></button>
         <button class="prof-btn" data-n="2.5" onclick="selProf(12,this)"><div class="pname">Thin–D</div><div class="pval">n = 2.5</div></button>
         <button class="prof-btn" data-n="2.6" onclick="selProf(12,this)"><div class="pname">D Shape</div><div class="pval">n = 2.6</div></button>
-        <button class="prof-btn" data-n="2.7" onclick="selProf(12,this)"><div class="pname">D–Wiz</div><div class="pval">n = 2.7</div></button>
-        <button class="prof-btn" data-n="2.8" onclick="selProf(12,this)"><div class="pname">Wizard II</div><div class="pval">n = 2.8</div></button>
-        <button class="prof-btn" data-n="3.0" onclick="selProf(12,this)"><div class="pname">Flat D / Wiz</div><div class="pval">n = 3.0</div></button>
+        <button class="prof-btn" data-n="2.7" onclick="selProf(12,this)"><div class="pname">D–Sorc</div><div class="pval">n = 2.7</div></button>
+        <button class="prof-btn" data-n="2.8" onclick="selProf(12,this)"><div class="pname">iSorcerer II</div><div class="pval">n = 2.8</div></button>
+        <button class="prof-btn" data-n="3.0" onclick="selProf(12,this)"><div class="pname">Flat D / Sorc</div><div class="pval">n = 3.0</div></button>
       </div>
       <input type="hidden" id="n12" value="2.4">
+      <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+        <span style="font-size:9px;color:var(--t3);white-space:nowrap">Fine-tune n₁₂</span>
+        <input type="range" id="n12range" min="1.2" max="3.2" step="0.01" value="2.4"
+          style="flex:1;accent-color:var(--amber);cursor:pointer"
+          oninput="syncN(12,this.value)">
+        <input type="number" id="n12fine" value="2.4" min="1.2" max="3.2" step="0.01"
+          style="width:52px;background:var(--s2);border:1px solid var(--border);border-radius:3px;color:var(--text);font-size:11px;padding:3px 5px;text-align:center"
+          oninput="syncN(12,this.value)">
+      </div>
     </div>
 
     <!-- MID FRET -->
@@ -786,7 +804,7 @@ canvas{cursor:zoom-in}
 // W1/W12 derived from W_nut, W_last, frets via fret position formula
 // T values directly from manufacturer specs
 // n values: expert estimation (not published by manufacturers)
-// Sources: Ibanez official wiki, Gibson/Fender/PRS/Schecter spec sheets
+// Sources: publicly available manufacturer spec sheets and community measurements
 // ═══════════════════════════════════════════════════
 
 function fretW(wNut, wLast, frets, targetFret, scaleLen) {
@@ -797,46 +815,46 @@ function fretW(wNut, wLast, frets, targetFret, scaleLen) {
 }
 
 const LIBRARY = {
-  "Ibanez": [
+  "iSorcerer-style": [
     // ── 6-string ──
-    { name:"Wizard (1989–2002)", str:6, frets:22, wNut:43, wLast:56, scale:648, T1:17, T12:20, n1:3.0, n12:3.0,
-      note:"Original Wizard. Extremely thin — 17mm at nut. Reference data: Ibanez wiki." },
-    { name:"Wizard II", str:6, frets:22, wNut:43, wLast:56, scale:648, T1:19, T12:21, n1:2.8, n12:2.8,
-      note:"2mm thicker than original. Standard on many RG models 1997–2010." },
-    { name:"Wizard III", str:6, frets:24, wNut:43, wLast:58, scale:648, T1:19, T12:21, n1:2.8, n12:2.8,
-      note:"Current standard RG neck. 2011–present." },
-    { name:"Wizard HP", str:6, frets:24, wNut:43, wLast:58, scale:648, T1:18, T12:20, n1:2.9, n12:3.0,
-      note:"High Performance — slightly thinner than Wizard III. Prestige models." },
-    { name:"Super Wizard HP", str:6, frets:24, wNut:43, wLast:58, scale:648, T1:17, T12:19, n1:3.0, n12:3.0,
-      note:"Thinnest production Ibanez neck. J-Custom & top Prestige." },
-    { name:"Nitro Wizard", str:6, frets:24, wNut:43, wLast:58, scale:648, T1:19, T12:21, n1:2.8, n12:2.8,
-      note:"RGD / baritone range. Same dims as Wizard III." },
+    { name:"iSorcerer (1989–2002)", str:6, frets:22, wNut:43, wLast:56, scale:648, T1:17, T12:20, n1:3.0, n12:3.0,
+      note:"Original iSorcerer. Extremely thin — 17mm at nut. Community measurements." },
+    { name:"iSorcerer II", str:6, frets:22, wNut:43, wLast:56, scale:648, T1:19, T12:21, n1:2.8, n12:2.8,
+      note:"2mm thicker than original. Standard on many models 1997–2010." },
+    { name:"iSorcerer III", str:6, frets:24, wNut:43, wLast:58, scale:648, T1:19, T12:21, n1:2.8, n12:2.8,
+      note:"Current standard neck. 2011–present." },
+    { name:"iSorcerer HP", str:6, frets:24, wNut:43, wLast:58, scale:648, T1:18, T12:20, n1:2.9, n12:3.0,
+      note:"High Performance variant — slightly thinner. Top-tier models." },
+    { name:"Super iSorcerer HP", str:6, frets:24, wNut:43, wLast:58, scale:648, T1:17, T12:19, n1:3.0, n12:3.0,
+      note:"Thinnest production neck in this family. Top-tier models." },
+    { name:"Nitro iSorcerer", str:6, frets:24, wNut:43, wLast:58, scale:648, T1:19, T12:21, n1:2.8, n12:2.8,
+      note:"Baritone range. Same dims as standard." },
     { name:"AZ Oval C", str:6, frets:22, wNut:42, wLast:56.4, scale:648, T1:20.5, T12:22.5, n1:2.0, n12:2.0,
-      note:"More traditional feel. AZ series 2018–present." },
-    { name:"Wizard C", str:6, frets:22, wNut:42, wLast:57, scale:648, T1:21, T12:22, n1:2.2, n12:2.2,
+      note:"More traditional feel. 2018–present." },
+    { name:"iSorcerer C", str:6, frets:22, wNut:42, wLast:57, scale:648, T1:21, T12:22, n1:2.2, n12:2.2,
       note:"Slightly chunkier C shape. 2021–present." },
-    { name:"Wizard Multiscale", str:6, frets:24, wNut:43, wLast:58, scale:641, T1:18, T12:20, n1:2.9, n12:3.0,
-      note:"Scale 648→635mm. Width same as Wizard III." },
+    { name:"iSorcerer Multiscale", str:6, frets:24, wNut:43, wLast:58, scale:641, T1:18, T12:20, n1:2.9, n12:3.0,
+      note:"Scale 648→635mm. Width same as standard." },
     // ── 7-string ──
-    { name:"Wizard II-7", str:7, frets:24, wNut:48, wLast:68, scale:648, T1:19, T12:21, n1:2.8, n12:2.8,
+    { name:"iSorcerer II-7", str:7, frets:24, wNut:48, wLast:68, scale:648, T1:19, T12:21, n1:2.8, n12:2.8,
       note:"Standard 7-str from 2010+. 19mm thin for a 7-string." },
-    { name:"Wizard III-7", str:7, frets:24, wNut:48, wLast:68, scale:648, T1:19, T12:21, n1:2.8, n12:2.8,
+    { name:"iSorcerer III-7", str:7, frets:24, wNut:48, wLast:68, scale:648, T1:19, T12:21, n1:2.8, n12:2.8,
       note:"Current 7-str standard." },
-    { name:"Wizard III-7 Multiscale", str:7, frets:24, wNut:48, wLast:68, scale:667, T1:19, T12:21, n1:2.8, n12:2.8,
-      note:"686→648mm multiscale. Data: Ibanez wiki." },
-    { name:"Nitro Wizard-7", str:7, frets:24, wNut:48, wLast:68, scale:648, T1:19, T12:21, n1:2.8, n12:2.8,
-      note:"RGD7 baritone range." },
-    { name:"Wizard-7 Prestige", str:7, frets:24, wNut:48, wLast:68, scale:648, T1:19, T12:21, n1:2.8, n12:2.8,
+    { name:"iSorcerer III-7 Multiscale", str:7, frets:24, wNut:48, wLast:68, scale:667, T1:19, T12:21, n1:2.8, n12:2.8,
+      note:"686→648mm multiscale. Community measurements." },
+    { name:"Nitro iSorcerer-7", str:7, frets:24, wNut:48, wLast:68, scale:648, T1:19, T12:21, n1:2.8, n12:2.8,
+      note:"Baritone 7-string range." },
+    { name:"iSorcerer-7 Prestige", str:7, frets:24, wNut:48, wLast:68, scale:648, T1:19, T12:21, n1:2.8, n12:2.8,
       note:"Top prestige 7-string." },
     // ── 8-string ──
-    { name:"Wizard II-8", str:8, frets:24, wNut:55, wLast:80, scale:686, T1:20, T12:21.5, n1:2.9, n12:2.9,
+    { name:"iSorcerer II-8", str:8, frets:24, wNut:55, wLast:80, scale:686, T1:20, T12:21.5, n1:2.9, n12:2.9,
       note:"Standard 8-str. 27\" scale." },
-    { name:"Nitro Wizard-8", str:8, frets:24, wNut:55, wLast:80, scale:686, T1:20, T12:21.5, n1:2.9, n12:2.9,
-      note:"RGD8 range. 27\" scale." },
-    { name:"Wizard-8", str:8, frets:24, wNut:55, wLast:80, scale:686, T1:19, T12:21, n1:3.0, n12:3.0,
-      note:"Thinnest 8-string. RG8 models 2019+." },
+    { name:"Nitro iSorcerer-8", str:8, frets:24, wNut:55, wLast:80, scale:686, T1:20, T12:21.5, n1:2.9, n12:2.9,
+      note:"Baritone 8-string range. 27\" scale." },
+    { name:"iSorcerer-8", str:8, frets:24, wNut:55, wLast:80, scale:686, T1:19, T12:21, n1:3.0, n12:3.0,
+      note:"Thinnest 8-string variant. 2019+." },
   ],
-  "Gibson": [
+  "Mahogany Classic": [
     { name:"50s Rounded C", str:6, frets:22, wNut:43, wLast:55, scale:628, T1:22, T12:24.5, n1:2.0, n12:2.0,
       note:"Chunky vintage feel. LP Standard 50s, ES-335 etc. ~.860\"/.960\" at frets 1/12." },
     { name:"60s Slim Taper", str:6, frets:22, wNut:43, wLast:55, scale:628, T1:19.5, T12:22, n1:2.3, n12:2.4,
@@ -846,9 +864,9 @@ const LIBRARY = {
     { name:"Memphis Slim Taper", str:6, frets:22, wNut:43, wLast:55, scale:628, T1:19, T12:21.5, n1:2.4, n12:2.4,
       note:"ES-339/335 slim. Similar to 60s Slim but slightly thinner." },
   ],
-  "Fender": [
+  "Bolt-on Classic": [
     { name:"Modern C", str:6, frets:22, wNut:42, wLast:54, scale:648, T1:20.8, T12:23.1, n1:2.2, n12:2.2,
-      note:"Current Player/Professional standard. ~.820\"/.910\". Most common Fender shape." },
+      note:"Current standard C. ~.820\"/.910\". Most common modern shape." },
     { name:"Deep C", str:6, frets:21, wNut:42, wLast:54, scale:648, T1:21.6, T12:24.1, n1:2.1, n12:2.1,
       note:"Rounder bottom than Modern C. American Ultra series." },
     { name:"60s C", str:6, frets:21, wNut:42, wLast:54, scale:648, T1:20.8, T12:24.6, n1:2.0, n12:2.0,
@@ -858,33 +876,33 @@ const LIBRARY = {
     { name:"50s U", str:6, frets:21, wNut:42, wLast:54, scale:648, T1:23, T12:25.4, n1:1.5, n12:1.5,
       note:"Full chunky U. Vintage reissues. ~.905\"/.998\"." },
   ],
-  "PRS": [
+  "Modern USA": [
     { name:"Pattern Thin", str:6, frets:22, wNut:43, wLast:52, scale:635, T1:20.1, T12:22.2, n1:2.2, n12:2.3,
       note:"Slim C. CE24, S2 Standard, many Core models. ~.790\"/.875\"." },
     { name:"Pattern (Wide Fat)", str:6, frets:22, wNut:43, wLast:52, scale:635, T1:21, T12:24.2, n1:2.0, n12:2.0,
-      note:"Fuller C. Custom 24 standard. ~.825\"/.953\"." },
+      note:"Fuller C profile. Standard model. ~.825\"/.953\"." },
     { name:"Pattern Vintage", str:6, frets:22, wNut:43, wLast:52, scale:635, T1:22, T12:25, n1:1.9, n12:1.9,
-      note:"Rounder vintage feel. McCarty, Hollowbody. ~.865\"/.984\"." },
+      note:"Rounder vintage feel. ~.865\"/.984\"." },
     { name:"Wide Thin (SE)", str:6, frets:22, wNut:43, wLast:52, scale:635, T1:20.6, T12:22.6, n1:2.3, n12:2.3,
       note:"SE series budget line. Slightly asymmetric in practice." },
   ],
-  "Schecter": [
+  "Extended Range C": [
     { name:"Ultra Thin C (6str)", str:6, frets:24, wNut:42, wLast:54, scale:648, T1:19, T12:20, n1:2.6, n12:2.7,
-      note:"Very thin for a C. Hellraiser, Omen. Schecter spec sheet." },
+      note:"Very thin for a C. Mid-range models." },
     { name:"Thin C (6str)", str:6, frets:24, wNut:42, wLast:54, scale:648, T1:20, T12:22, n1:2.4, n12:2.4,
-      note:"Standard Schecter C. Most mid-range models." },
+      note:"Standard C. Most mid-range models." },
     { name:"Ultra Thin C (7str)", str:7, frets:24, wNut:50, wLast:66, scale:648, T1:19, T12:20, n1:2.6, n12:2.7,
-      note:"7-string Hellraiser / Banshee." },
+      note:"7-string variant." },
     { name:"Ultra Thin C (8str)", str:8, frets:24, wNut:54, wLast:72, scale:686, T1:19, T12:20, n1:2.7, n12:2.8,
       note:"8-string range. 27\" scale." },
   ],
-  "ESP / LTD": [
+  "Extended Range U": [
     { name:"Extra Thin U (6str)", str:6, frets:24, wNut:42, wLast:54, scale:648, T1:19, T12:21, n1:1.6, n12:1.7,
-      note:"ESP/LTD signature thin U. EC/M series. Slim but rounder bottom than Wizard." },
+      note:"Signature thin U. Slim but rounder bottom than extreme flat profiles." },
     { name:"Thin U (6str)", str:6, frets:24, wNut:42, wLast:54, scale:648, T1:20, T12:22, n1:1.7, n12:1.8,
       note:"Standard LTD U shape. MH, H series." },
     { name:"Extra Thin U (7str)", str:7, frets:24, wNut:48, wLast:64, scale:648, T1:19, T12:21, n1:1.6, n12:1.7,
-      note:"LTD 7-string. H-1007 etc." },
+      note:"7-string variant." },
   ],
 };
 
@@ -1599,12 +1617,31 @@ function setMode(mode) {
   document.getElementById('bf_top').classList.toggle('visible', mode!=='simple');
 }
 
+function syncN(fret, val) {
+  const v = parseFloat(val);
+  if(isNaN(v) || v < 1.2 || v > 3.2) return;
+  const rounded = Math.round(v * 100) / 100;
+  document.getElementById('n' + fret).value = rounded;
+  document.getElementById('n' + fret + 'range').value = rounded;
+  document.getElementById('n' + fret + 'fine').value = rounded;
+  // deactivate all profile buttons (custom value)
+  const grid = document.getElementById(fret===1?'profGrid1':'profGrid12');
+  const cls  = fret===1?'active-g':'active-a';
+  grid.querySelectorAll('.prof-btn').forEach(b => {
+    if(parseFloat(b.dataset.n) === rounded) b.classList.add(cls);
+    else b.classList.remove('active-g','active-a');
+  });
+}
+
 function selProf(fret, btn) {
   const grid = document.getElementById(fret===1?'profGrid1':'profGrid12');
   const cls  = fret===1?'active-g':'active-a';
   grid.querySelectorAll('.prof-btn').forEach(b=>b.classList.remove('active-g','active-a'));
   btn.classList.add(cls);
-  document.getElementById('n'+fret).value = btn.dataset.n;
+  const v = btn.dataset.n;
+  document.getElementById('n'+fret).value = v;
+  document.getElementById('n'+fret+'range').value = v;
+  document.getElementById('n'+fret+'fine').value = v;
 }
 
 // ═══════════════════════════════════════════════════
