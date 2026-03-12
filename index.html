@@ -1586,14 +1586,19 @@ function loadFromURL() {
 function setVal(id, val) { if(val!==null) { const el=document.getElementById(id); if(el) el.value=val; } }
 
 function activateProfile(fret, nVal) {
-  const grid = document.getElementById('profile'+fret==='1'?'profGrid1':'profGrid12') ||
-               document.getElementById(fret===1?'profGrid1':'profGrid12');
+  const v = parseFloat(nVal);
+  // sync slider and fine input
+  const range = document.getElementById('n'+fret+'range');
+  const fine  = document.getElementById('n'+fret+'fine');
+  if(range) range.value = v;
+  if(fine)  fine.value  = v;
+  // highlight matching button
+  const grid = document.getElementById(fret===1?'profGrid1':'profGrid12');
   if(!grid) return;
+  const cls = fret===1?'active-g':'active-a';
   grid.querySelectorAll('.prof-btn').forEach(b=>{
     b.classList.remove('active-g','active-a');
-    if(parseFloat(b.dataset.n)===parseFloat(nVal)) {
-      b.classList.add(fret===1?'active-g':'active-a');
-    }
+    if(parseFloat(b.dataset.n)===v) b.classList.add(cls);
   });
 }
 
@@ -1737,6 +1742,8 @@ function loadPreset(key) {
   document.getElementById('n12').value = p.n12;
   activateProfile(1,  p.n1);
   activateProfile(12, p.n12);
+  activateProfile(1,  p.n1);
+  activateProfile(12, p.n12);
 
   // Switch to calculator tab and calculate
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
@@ -1830,4 +1837,4 @@ window.addEventListener('resize', ()=>{
   </div>
 </div>
 </body>
-</html>
+</html>z
