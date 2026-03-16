@@ -556,6 +556,44 @@ canvas{
 .hidden{display:none!important}
 .bf-extra{display:none}
 .bf-extra.visible{display:block}
+
+/* ── EXPERIMENTAL ── */
+.exp-section{
+  margin-top:10px;
+  padding-top:10px;
+  border-top:1px solid var(--border);
+}
+.exp-toggle{
+  display:flex;align-items:center;gap:8px;
+  cursor:pointer;
+  font-size:9px;color:var(--t3);
+  text-transform:uppercase;letter-spacing:.8px;
+  user-select:none;
+}
+.exp-toggle input[type=checkbox]{
+  accent-color:var(--g);cursor:pointer;
+}
+.exp-toggle:hover{color:var(--t2)}
+.exp-fields{
+  display:none;
+  margin-top:10px;
+  padding:10px;
+  background:var(--s2);
+  border-radius:var(--r);
+  border:1px solid var(--border);
+}
+.exp-fields.open{display:block}
+.exp-label{
+  font-size:8px;color:var(--t3);
+  text-transform:uppercase;letter-spacing:.5px;
+  margin-bottom:6px;
+}
+.exp-badge{
+  font-size:8px;padding:1px 6px;border-radius:2px;
+  background:rgba(162,155,254,.15);color:#a29bfe;
+  border:1px solid rgba(162,155,254,.2);
+  margin-left:6px;letter-spacing:.3px;
+}
 </style>
 </head>
 <body>
@@ -700,6 +738,42 @@ canvas{
           style="width:52px;background:var(--s2);border:1px solid var(--border);border-radius:3px;color:var(--text);font-size:11px;padding:3px 5px;text-align:center"
           oninput="syncN(12,this.value)">
       </div>
+    </div>
+
+    <!-- EXPERIMENTAL MODES -->
+    <div class="card exp-section" style="border-top:1px solid rgba(162,155,254,.3)">
+      <div style="font-size:9px;color:#a29bfe;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">
+        ⚗ Experimental <span class="exp-badge">BETA</span>
+      </div>
+
+      <!-- Asymmetric n -->
+      <label class="exp-toggle">
+        <input type="checkbox" id="asymToggle" onchange="toggleExp('asym')">
+        Asymmetric profile (bass / treble)
+      </label>
+      <div class="exp-fields" id="asymFields">
+        <div class="exp-label">Bass side (left) · Fret 1 → 12</div>
+        <div style="display:flex;gap:6px;margin-bottom:8px">
+          <input type="number" id="nBass1" value="2.1" min="1.2" max="3.2" step="0.01"
+            style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:2px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;padding:6px 8px;outline:none"
+            oninput="debouncedCalculate()" onchange="debouncedCalculate()" placeholder="n bass 1">
+          <input type="number" id="nBass12" value="2.3" min="1.2" max="3.2" step="0.01"
+            style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:2px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;padding:6px 8px;outline:none"
+            oninput="debouncedCalculate()" onchange="debouncedCalculate()" placeholder="n bass 12">
+        </div>
+        <div class="exp-label">Treble side (right) · Fret 1 → 12</div>
+        <div style="display:flex;gap:6px">
+          <input type="number" id="nTreble1" value="1.6" min="1.2" max="3.2" step="0.01"
+            style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:2px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;padding:6px 8px;outline:none"
+            oninput="debouncedCalculate()" onchange="debouncedCalculate()" placeholder="n treble 1">
+          <input type="number" id="nTreble12" value="1.8" min="1.2" max="3.2" step="0.01"
+            style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:2px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;padding:6px 8px;outline:none"
+            oninput="debouncedCalculate()" onchange="debouncedCalculate()" placeholder="n treble 12">
+        </div>
+        <div style="font-size:8px;color:var(--t3);margin-top:8px;line-height:1.6">💡 Twisted neck style: flip the values so bass gets rounder toward heel,<br>treble gets flatter — e.g. Bass 2.1→1.8 · Treble 1.6→2.3</div>
+      </div>
+
+
     </div>
 
     <!-- MID FRET -->
@@ -893,10 +967,12 @@ const LIBRARY = {
 // MATH CORE
 // ═══════════════════════════════════════════════════
 
-function seY(x, a, b, n) {
-  const r = Math.abs(x/a);
+function seY(x, a, b, n, exp) {
+  const effectiveN = (exp && exp.nBass != null && exp.nTreble != null)
+    ? (x <= 0 ? exp.nBass : exp.nTreble) : n;
+  const r = Math.abs(x / a);
   if(r >= 1) return 0;
-  return b * Math.pow(1 - Math.pow(r, n), 1/n);
+  return b * Math.pow(1 - Math.pow(r, effectiveN), 1/effectiveN);
 }
 
 function findTangentPt(a, b, n, angleDeg) {
@@ -931,7 +1007,7 @@ function intersectLines(p1x,p1y,s1, p2x,p2y,s2) {
 
 function dist2d(ax,ay,bx,by){ return Math.sqrt((bx-ax)**2+(by-ay)**2); }
 
-function computeFacets(W, T, n) {
+function computeFacets(W, T, n, exp) {
   const a = W/2, b = T;
   const P45  = findTangentPt(a,b,n,45);
   const P225 = findTangentPt(a,b,n,22.5);
@@ -981,7 +1057,7 @@ function computeFacets(W, T, n) {
   const primaryLen = dist2d(cornerSide.x, cornerSide.y, cornerBack.x, cornerBack.y);
 
   return {
-    a, b, n,
+    a, b, n, exp: exp || null,
     C_side, C_back,
     cornerSide, cornerBack, primaryLen,
     P45, s45,
@@ -1045,15 +1121,17 @@ function drawBlankRect(ctx, f, C, dims) {
 function drawCurve(ctx, f, dims, color) {
   const {sx,sy} = dims;
   const {a,b,n} = f;
+  const exp = f.exp || null;
   ctx.beginPath();
   for(let i=0;i<=400;i++){
-    const x=-a+(2*a*i/400), y=seY(x,a,b,n);
+    const x=-a+(2*a*i/400), y=seY(x,a,b,n,exp);
     i===0?ctx.moveTo(sx(x),sy(y)):ctx.lineTo(sx(x),sy(y));
   }
   ctx.strokeStyle=color;ctx.lineWidth=2;ctx.stroke();
   // fingerboard line
   ctx.strokeStyle=color+'28';ctx.lineWidth=1.5;
   ctx.beginPath();ctx.moveTo(sx(-a),sy(0));ctx.lineTo(sx(a),sy(0));ctx.stroke();
+
 }
 
 function clipTangentToBounds(px,py,slope,a,b){
@@ -1093,10 +1171,10 @@ function dimLabel(ctx,sx,sy,x,y,text,align){
 }
 
 // ── STEP 1: Primary facets on rectangle ──
-function drawStep1(id, W, T, n, accentColor) {
+function drawStep1(id, W, T, n, accentColor, exp) {
   const s = setupCanvas(id); if(!s) return;
   const {ctx,ow,oh} = s;
-  const f = computeFacets(W,T,n);
+  const f = computeFacets(W,T,n,exp);
   const {a,b} = f;
   const dims = makeCoords(ow,oh,a,b);
   const {sx,sy} = dims;
@@ -1104,22 +1182,31 @@ function drawStep1(id, W, T, n, accentColor) {
   drawBlankRect(ctx,f,null,dims);
   drawCurve(ctx,f,dims,accentColor+'40');
 
-  // Primary tangent lines
+  // Primary tangent lines — per side if asymmetric
   [1,-1].forEach(side => {
-    const pt = {x: side*f.P45.x, y: f.P45.y};
-    const slope = side < 0 ? -f.s45 : f.s45;
-    const pts = clipTangentToBounds(pt.x,pt.y,slope,a,b);
+    // For asymmetric: use side-specific n for tangent computation
+    let sideN = n;
+    if(exp && exp.nBass != null && exp.nTreble != null)
+      sideN = side < 0 ? exp.nBass : exp.nTreble;  // side<0 is left=bass
+    const sideB = b;
+    // recompute tangent point for this side
+    const fp = (sideN !== n || sideB !== b)
+      ? computeFacets(W, sideB, sideN)
+      : f;
+    const pt = {x: side*fp.P45.x, y: fp.P45.y};
+    const slope = side < 0 ? -fp.s45 : fp.s45;
+    const pts = clipTangentToBounds(pt.x,pt.y,slope,a,sideB);
     drawLine(ctx,sx,sy,pts,'#ff9f43',1.5,[4,4]);
   });
 
-  // Corner of primary facet — right side
-  const cSide = f.cornerSide, cBack = f.cornerBack;
+  const fBassD   = (exp && exp.nBass   != null) ? computeFacets(W, T, exp.nBass)   : f;
+  const fTrebleD = (exp && exp.nTreble != null) ? computeFacets(W, T, exp.nTreble) : f;
 
-  // Measurement dots
-  dot(ctx,sx,sy, a, f.C_side,  '#ff9f43', 3); // C_side point on side
-  dot(ctx,sx,sy, f.C_back, b,  '#ff9f43', 3); // C_back point on back
-  dot(ctx,sx,sy,-a, f.C_side,  '#ff9f43', 3);
-  dot(ctx,sx,sy,-f.C_back, b, '#ff9f43', 3);
+  // Measurement dots — bass side (left, sg=-1) uses fBassD, treble (right, sg=1) uses fTrebleD
+  dot(ctx,sx,sy, a,          fTrebleD.C_side, '#ff9f43', 3);
+  dot(ctx,sx,sy, fTrebleD.C_back, b,          '#ff9f43', 3);
+  dot(ctx,sx,sy,-a,          fBassD.C_side,   '#ff9f43', 3);
+  dot(ctx,sx,sy,-fBassD.C_back, b,            '#ff9f43', 3);
 
   // ── Measurement annotations ──
   ctx.font='8px var(--mono)';
@@ -1127,65 +1214,67 @@ function drawStep1(id, W, T, n, accentColor) {
 
   // C_side: vertical dashed line + label — RIGHT side
   ctx.strokeStyle='#ff9f4366';ctx.lineWidth=1;ctx.setLineDash([2,3]);
-  ctx.beginPath();ctx.moveTo(sx(a)+off,sy(0));ctx.lineTo(sx(a)+off,sy(f.C_side));ctx.stroke();
+  ctx.beginPath();ctx.moveTo(sx(a)+off,sy(0));ctx.lineTo(sx(a)+off,sy(fTrebleD.C_side));ctx.stroke();
   ctx.setLineDash([]);
   ctx.fillStyle='#ff9f43';ctx.textAlign='left';
-  ctx.fillText(fmtC(f.C_side), sx(a)+off+2, sy(f.C_side/2)+3);
+  ctx.fillText(fmtC(fTrebleD.C_side), sx(a)+off+2, sy(fTrebleD.C_side/2)+3);
 
   // C_side: vertical dashed line + label — LEFT side (mirror)
   ctx.strokeStyle='#ff9f4366';ctx.lineWidth=1;ctx.setLineDash([2,3]);
-  ctx.beginPath();ctx.moveTo(sx(-a)-off,sy(0));ctx.lineTo(sx(-a)-off,sy(f.C_side));ctx.stroke();
+  ctx.beginPath();ctx.moveTo(sx(-a)-off,sy(0));ctx.lineTo(sx(-a)-off,sy(fBassD.C_side));ctx.stroke();
   ctx.setLineDash([]);
   ctx.fillStyle='#ff9f43';ctx.textAlign='right';
-  ctx.fillText(fmtC(f.C_side), sx(-a)-off-2, sy(f.C_side/2)+3);
+  ctx.fillText(fmtC(fBassD.C_side), sx(-a)-off-2, sy(fBassD.C_side/2)+3);
 
   // C_back: horizontal dashed line + label — RIGHT of center
   ctx.strokeStyle='#ff9f4366';ctx.lineWidth=1;ctx.setLineDash([2,3]);
-  ctx.beginPath();ctx.moveTo(sx(0),sy(b)+off);ctx.lineTo(sx(f.C_back),sy(b)+off);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(sx(0),sy(b)+off);ctx.lineTo(sx(fTrebleD.C_back),sy(b)+off);ctx.stroke();
   ctx.setLineDash([]);
   ctx.fillStyle='#ff9f43';ctx.textAlign='center';
-  ctx.fillText(fmtC(f.C_back), sx(f.C_back/2), sy(b)+off+8);
+  ctx.fillText(fmtC(fTrebleD.C_back), sx(fTrebleD.C_back/2), sy(b)+off+8);
 
   // C_back: horizontal dashed line + label — LEFT of center (mirror)
   ctx.strokeStyle='#ff9f4366';ctx.lineWidth=1;ctx.setLineDash([2,3]);
-  ctx.beginPath();ctx.moveTo(sx(0),sy(b)+off);ctx.lineTo(sx(-f.C_back),sy(b)+off);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(sx(0),sy(b)+off);ctx.lineTo(sx(-fBassD.C_back),sy(b)+off);ctx.stroke();
   ctx.setLineDash([]);
   ctx.fillStyle='#ff9f43';ctx.textAlign='center';
-  ctx.fillText(fmtC(f.C_back), sx(-f.C_back/2), sy(b)+off+8);
+  ctx.fillText(fmtC(fBassD.C_back), sx(-fBassD.C_back/2), sy(b)+off+8);
 
-  // fromCornerSide: vertical dashed from corner A up to top-right corner
-  const fcs = f.b - f.C_side;  // fromCornerSide
-  const fcb = f.a - f.C_back;  // fromCornerBack
+  // fromCorner — per side
+  const fcs_t = fTrebleD.b - fTrebleD.C_side;
+  const fcb_t = fTrebleD.a - fTrebleD.C_back;
+  const fcs_b = fBassD.b - fBassD.C_side;
+  const fcb_b = fBassD.a - fBassD.C_back;
   const off2 = off + 14;
 
-  // RIGHT: from corner (a, b) up to (a, C_side) — vertical, inside
+  // RIGHT (treble): from corner up to C_side
   ctx.strokeStyle='#ff9f4399';ctx.lineWidth=1;ctx.setLineDash([2,3]);
-  ctx.beginPath();ctx.moveTo(sx(a)+off2,sy(f.C_side));ctx.lineTo(sx(a)+off2,sy(b));ctx.stroke();
+  ctx.beginPath();ctx.moveTo(sx(a)+off2,sy(fTrebleD.C_side));ctx.lineTo(sx(a)+off2,sy(b));ctx.stroke();
   ctx.setLineDash([]);
   ctx.fillStyle='#ff9f43';ctx.textAlign='left';
-  ctx.fillText(fmtC(fcs), sx(a)+off2+2, sy((f.C_side+b)/2)+3);
+  ctx.fillText(fmtC(fcs_t), sx(a)+off2+2, sy((fTrebleD.C_side+b)/2)+3);
 
-  // LEFT mirror
+  // LEFT (bass): from corner up to C_side
   ctx.strokeStyle='#ff9f4399';ctx.lineWidth=1;ctx.setLineDash([2,3]);
-  ctx.beginPath();ctx.moveTo(sx(-a)-off2,sy(f.C_side));ctx.lineTo(sx(-a)-off2,sy(b));ctx.stroke();
+  ctx.beginPath();ctx.moveTo(sx(-a)-off2,sy(fBassD.C_side));ctx.lineTo(sx(-a)-off2,sy(b));ctx.stroke();
   ctx.setLineDash([]);
   ctx.fillStyle='#ff9f43';ctx.textAlign='right';
-  ctx.fillText(fmtC(fcs), sx(-a)-off2-2, sy((f.C_side+b)/2)+3);
+  ctx.fillText(fmtC(fcs_b), sx(-a)-off2-2, sy((fBassD.C_side+b)/2)+3);
 
-  // fromCornerBack: horizontal dashed from corner (a, b) left to (C_back, b)
+  // fromCornerBack: horizontal
   const off3 = off + 14;
   ctx.strokeStyle='#ff9f4399';ctx.lineWidth=1;ctx.setLineDash([2,3]);
-  ctx.beginPath();ctx.moveTo(sx(f.C_back),sy(b)+off3);ctx.lineTo(sx(a),sy(b)+off3);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(sx(fTrebleD.C_back),sy(b)+off3);ctx.lineTo(sx(a),sy(b)+off3);ctx.stroke();
   ctx.setLineDash([]);
   ctx.fillStyle='#ff9f43';ctx.textAlign='center';
-  ctx.fillText(fmtC(fcb), sx((f.C_back+a)/2), sy(b)+off3+8);
+  ctx.fillText(fmtC(fcb_t), sx((fTrebleD.C_back+a)/2), sy(b)+off3+8);
 
-  // LEFT mirror
+  // LEFT mirror (bass)
   ctx.strokeStyle='#ff9f4399';ctx.lineWidth=1;ctx.setLineDash([2,3]);
-  ctx.beginPath();ctx.moveTo(sx(-f.C_back),sy(b)+off3);ctx.lineTo(sx(-a),sy(b)+off3);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(sx(-fBassD.C_back),sy(b)+off3);ctx.lineTo(sx(-a),sy(b)+off3);ctx.stroke();
   ctx.setLineDash([]);
   ctx.fillStyle='#ff9f43';ctx.textAlign='center';
-  ctx.fillText(fmtC(fcb), sx(-(f.C_back+a)/2), sy(b)+off3+8);
+  ctx.fillText(fmtC(fcb_b), sx(-(fBassD.C_back+a)/2), sy(b)+off3+8);
 
   // W and T labels
   ctx.fillStyle='#3a4a3a';ctx.textAlign='center';
@@ -1195,41 +1284,50 @@ function drawStep1(id, W, T, n, accentColor) {
 }
 
 // ── STEP 2: Secondary facets on hexagon ──
-function drawStep2(id, W, T, n, accentColor) {
+function drawStep2(id, W, T, n, accentColor, exp) {
   const s = setupCanvas(id); if(!s) return;
   const {ctx, ow, oh} = s;
-  const f = computeFacets(W, T, n);
+  const f = computeFacets(W, T, n, exp);
   const {a, b} = f;
   const dims = makeCoords(ow, oh, a, b);
   const {sx, sy} = dims;
 
-  const cS = f.C_side, cB = f.C_back;
+  const fBassS   = (exp && exp.nBass   != null) ? computeFacets(W, T, exp.nBass)   : f;
+  const fTrebleS = (exp && exp.nTreble != null) ? computeFacets(W, T, exp.nTreble) : f;
 
-  // ── hexagon fill ──
+  // Hexagon shape: use average of bass/treble corners for the hexagon itself
+  const cS_t = fTrebleS.C_side, cB_t = fTrebleS.C_back;
+  const cS_b = fBassS.C_side,   cB_b = fBassS.C_back;
+  // For hexagon outline: left side uses bass, right uses treble
+  const cS = f.C_side, cB = f.C_back; // keep for clipLine compat
+
+  // ── hexagon fill — asymmetric: right=treble, left=bass ──
   ctx.fillStyle = '#0d1010';
   ctx.beginPath();
-  ctx.moveTo(sx(-a), sy(0));  ctx.lineTo(sx(a),  sy(0));
-  ctx.lineTo(sx(a),  sy(cS)); ctx.lineTo(sx(cB), sy(b));
-  ctx.lineTo(sx(-cB),sy(b));  ctx.lineTo(sx(-a), sy(cS));
+  ctx.moveTo(sx(-a), sy(0));   ctx.lineTo(sx(a),   sy(0));
+  ctx.lineTo(sx(a),  sy(cS_t));ctx.lineTo(sx(cB_t),sy(b));
+  ctx.lineTo(sx(-cB_b),sy(b)); ctx.lineTo(sx(-a), sy(cS_b));
   ctx.closePath(); ctx.fill();
 
   // ── hexagon outline ──
   ctx.strokeStyle = '#3a4a38'; ctx.lineWidth = 1.5; ctx.setLineDash([]);
   ctx.beginPath();
-  ctx.moveTo(sx(-a), sy(0));  ctx.lineTo(sx(a),  sy(0));
-  ctx.lineTo(sx(a),  sy(cS)); ctx.lineTo(sx(cB), sy(b));
-  ctx.lineTo(sx(-cB),sy(b));  ctx.lineTo(sx(-a), sy(cS));
+  ctx.moveTo(sx(-a), sy(0));   ctx.lineTo(sx(a),   sy(0));
+  ctx.lineTo(sx(a),  sy(cS_t));ctx.lineTo(sx(cB_t),sy(b));
+  ctx.lineTo(sx(-cB_b),sy(b)); ctx.lineTo(sx(-a), sy(cS_b));
   ctx.closePath(); ctx.stroke();
 
   // ── target curve (faint) ──
   drawCurve(ctx, f, dims, accentColor + '50');
 
-  // ── primary facet (orange solid) ──
+  // ── primary facet (orange solid) — per side ──
   ctx.strokeStyle = '#ff9f43'; ctx.lineWidth = 1.5; ctx.setLineDash([]);
   [1,-1].forEach(sg => {
+    const cSsg = sg > 0 ? cS_t : cS_b;
+    const cBsg = sg > 0 ? cB_t : cB_b;
     ctx.beginPath();
-    ctx.moveTo(sx(sg*a),  sy(cS));
-    ctx.lineTo(sx(sg*cB), sy(b));
+    ctx.moveTo(sx(sg*a),   sy(cSsg));
+    ctx.lineTo(sx(sg*cBsg),sy(b));
     ctx.stroke();
   });
 
@@ -1292,10 +1390,50 @@ function drawStep2(id, W, T, n, accentColor) {
     return best;
   }
 
-  // ── draw secondary tangent lines clipped to hexagon ──
+  // ── draw secondary tangent lines clipped to hexagon — per side ──
   [1,-1].forEach(sg => {
+    const fSide = sg > 0 ? fTrebleS : fBassS;
+    const cSsg  = sg > 0 ? cS_t : cS_b;
+    const cBsg  = sg > 0 ? cB_t : cB_b;
+    // clipLine uses cS/cB from closure — override for this side
+    function clipLineSide(px, py, slope) {
+      const pts = [];
+      function tryPush(x, y) {
+        if (y < -0.1 || y > b + 0.1) return;
+        if (Math.abs(x) > a + 0.1) return;
+        if (sg > 0 && x < -0.1) return;
+        if (sg < 0 && x >  0.1) return;
+        const xMin = Math.min(sg*a, sg*cBsg), xMax = Math.max(sg*a, sg*cBsg);
+        if (x >= xMin - 0.1 && x <= xMax + 0.1) {
+          const primY = cSsg + (b - cSsg) / (sg*cBsg - sg*a) * (x - sg*a);
+          if (y > primY + 0.5) return;
+        }
+        pts.push({x, y});
+      }
+      { const xi = sg*a; tryPush(xi, py + slope*(xi - px)); }
+      if (Math.abs(slope) > 1e-9) {
+        tryPush(px - py/slope, 0);
+        tryPush(px + (b - py)/slope, b);
+      }
+      { tryPush(0, py + slope*(0 - px)); }
+      {
+        const primSlope = (b - cSsg) / (sg*cBsg - sg*a);
+        if (Math.abs(slope - primSlope) > 1e-9) {
+          const xi = (cSsg - py - primSlope*sg*a + slope*px) / (slope - primSlope);
+          tryPush(xi, py + slope*(xi - px));
+        }
+      }
+      if (pts.length < 2) return null;
+      let best = null, bestD = 0;
+      for (let i = 0; i < pts.length; i++)
+        for (let j = i+1; j < pts.length; j++) {
+          const d = (pts[i].x-pts[j].x)**2 + (pts[i].y-pts[j].y)**2;
+          if (d > bestD) { bestD = d; best = [pts[i], pts[j]]; }
+        }
+      return best;
+    }
     // 22.5°
-    const seg225 = clipLine(sg*f.P225.x, f.P225.y, sg < 0 ? -f.s225 : f.s225, sg);
+    const seg225 = clipLineSide(sg*fSide.P225.x, fSide.P225.y, sg < 0 ? -fSide.s225 : fSide.s225);
     if (seg225) {
       ctx.strokeStyle = '#a29bfe'; ctx.lineWidth = 1.5; ctx.setLineDash([3,4]);
       ctx.beginPath();
@@ -1304,7 +1442,7 @@ function drawStep2(id, W, T, n, accentColor) {
       ctx.stroke(); ctx.setLineDash([]);
     }
     // 67.5°
-    const seg675 = clipLine(sg*f.P675.x, f.P675.y, sg < 0 ? -f.s675 : f.s675, sg);
+    const seg675 = clipLineSide(sg*fSide.P675.x, fSide.P675.y, sg < 0 ? -fSide.s675 : fSide.s675);
     if (seg675) {
       ctx.strokeStyle = '#fd79a8'; ctx.lineWidth = 1.5; ctx.setLineDash([3,4]);
       ctx.beginPath();
@@ -1321,31 +1459,36 @@ function drawStep2(id, W, T, n, accentColor) {
   // 3. x225_on_45: where 22.5° crosses the primary facet
   // 4. x675_on_45: where 67.5° crosses the primary facet
 
-  // 22.5° facet: back wall → primary facet (angle to back = 22.5°)
-  const cb225 = f.C_back_225;   // x on back wall
-  // 67.5° facet: side wall → primary facet (angle to side = 67.5°)
-  const cs675 = f.C_side_675;   // y on side wall
-
   [1,-1].forEach(sg => {
-    // corner A and B — with labels
-    dot(ctx,sx,sy, sg*a,  cS, '#ff9f4388', 3.5);
-    dot(ctx,sx,sy, sg*cB, b,  '#ff9f4388', 3.5);
-    // label A (side∩primary) — above the dot
+    const fSide  = sg > 0 ? fTrebleS : fBassS;
+    const cSsg   = sg > 0 ? cS_t : cS_b;
+    const cBsg   = sg > 0 ? cB_t : cB_b;
+    const cb225sg = fSide.C_back_225;
+    const cs675sg = fSide.C_side_675;
+
+    // corner A and B
+    dot(ctx,sx,sy, sg*a,   cSsg, '#ff9f4388', 3.5);
+    dot(ctx,sx,sy, sg*cBsg, b,   '#ff9f4388', 3.5);
     ctx.fillStyle='#ff9f4399';ctx.font='7px var(--mono)';
     ctx.textAlign = sg > 0 ? 'left' : 'right';
-    ctx.fillText('A', sx(sg*a) + (sg>0?5:-5), sy(cS)-5);
-    // label B (back∩primary) — below the dot
+    ctx.fillText('A', sx(sg*a) + (sg>0?5:-5), sy(cSsg)-5);
     ctx.textAlign = sg > 0 ? 'right' : 'left';
-    ctx.fillText('B', sx(sg*cB) + (sg>0?-5:5), sy(b)+12);
-    // 22.5° facet endpoints (purple)
-    dot(ctx,sx,sy, sg*cb225,         b,               '#a29bfe', 4.5);
-    if (f.x225_on_45)
-      dot(ctx,sx,sy, sg*f.x225_on_45.x, f.x225_on_45.y, '#a29bfe', 4.5);
-    // 67.5° facet endpoints (pink)
-    dot(ctx,sx,sy, sg*a,             cs675,           '#fd79a8', 4.5);
-    if (f.x675_on_45)
-      dot(ctx,sx,sy, sg*f.x675_on_45.x, f.x675_on_45.y, '#fd79a8', 4.5);
+    ctx.fillText('B', sx(sg*cBsg) + (sg>0?-5:5), sy(b)+12);
+    // 22.5° back wall endpoint
+    dot(ctx,sx,sy, sg*cb225sg, b, '#a29bfe', 4.5);
+    if (fSide.x225_on_45)
+      dot(ctx,sx,sy, sg*fSide.x225_on_45.x, fSide.x225_on_45.y, '#a29bfe', 4.5);
+    // 67.5° side wall endpoint
+    dot(ctx,sx,sy, sg*a, cs675sg, '#fd79a8', 4.5);
+    if (fSide.x675_on_45)
+      dot(ctx,sx,sy, sg*fSide.x675_on_45.x, fSide.x675_on_45.y, '#fd79a8', 4.5);
   });
+
+  // convenience refs for labels (right=treble, left=bass)
+  const cb225 = fTrebleS.C_back_225;
+  const cs675 = fTrebleS.C_side_675;
+  const cb225b = fBassS.C_back_225;
+  const cs675b = fBassS.C_side_675;
 
   // ── dimension annotations — same style as Step 1 ──
   ctx.font = '8px var(--mono)';
@@ -1357,62 +1500,72 @@ function drawStep2(id, W, T, n, accentColor) {
     ctx.stroke();ctx.setLineDash([]);
   }
 
-  // 67.5° facet — side wall endpoint: vertical dashed line both sides
-  // From FB corner (y=0) down to cs675, outside the hexagon
+  // 67.5° side wall — RIGHT (treble), LEFT (bass)
   dimLine(a+off2/dims.sc, 0, a+off2/dims.sc, cs675, '#fd79a8');
-  dimLine(-a-off2/dims.sc, 0, -a-off2/dims.sc, cs675, '#fd79a8');
+  dimLine(-a-off2/dims.sc, 0, -a-off2/dims.sc, cs675b, '#fd79a8');
   ctx.fillStyle='#fd79a8';
   ctx.textAlign='left';
   ctx.fillText(fmtC(cs675), sx(a)+off2+2, sy(cs675/2)+3);
   ctx.textAlign='right';
-  ctx.fillText(fmtC(cs675), sx(-a)-off2-2, sy(cs675/2)+3);
+  ctx.fillText(fmtC(cs675b), sx(-a)-off2-2, sy(cs675b/2)+3);
 
-  // 22.5° facet — back wall endpoint: horizontal dashed line both sides
+  // 22.5° back wall — RIGHT (treble), LEFT (bass)
   dimLine(0, b+off2/dims.sc, cb225, b+off2/dims.sc, '#a29bfe');
-  dimLine(0, b+off2/dims.sc, -cb225, b+off2/dims.sc, '#a29bfe');
+  dimLine(0, b+off2/dims.sc, -cb225b, b+off2/dims.sc, '#a29bfe');
   ctx.fillStyle='#a29bfe';
   ctx.textAlign='center';
-  ctx.fillText(fmtC(cb225), sx(cb225/2),  sy(b)+off2+8);
-  ctx.fillText(fmtC(cb225), sx(-cb225/2), sy(b)+off2+8);
+  ctx.fillText(fmtC(cb225),  sx(cb225/2),  sy(b)+off2+8);
+  ctx.fillText(fmtC(cb225b), sx(-cb225b/2), sy(b)+off2+8);
 
-  // Primary facet direction: cornerA(a,cS) → cornerB(cB,b)
-  const pdx = cB - a, pdy = b - cS;
-  const plen = Math.sqrt(pdx*pdx + pdy*pdy);
+  // Primary facet dimension lines — per side
   const sc = dims.sc;
   const offPx = (off2 * 1.8) / sc;
 
-  // 67.5° segment: cornerA → x675 (near side wall, top of primary)
-  // outward perp = rotate primary -90° = (pdy, -pdx) → points toward FB corner (up-right)
-  const o67x =  pdy/plen * offPx;
-  const o67y = -pdx/plen * offPx;
-
-  if (f.x675_on_45 && f.D_675_from_A != null) {
-    const x0 = a, y0 = cS, x1 = f.x675_on_45.x, y1 = f.x675_on_45.y;
-    dimLine(x0+o67x, y0+o67y, x1+o67x, y1+o67y, '#fd79a8');
-    dimLine(-x0-o67x, y0+o67y, -x1-o67x, y1+o67y, '#fd79a8');
-    const mx = (x0+x1)/2, my = (y0+y1)/2;
-    // label right of midpoint on both sides (toward outside/right of each line)
-    ctx.fillStyle='#fd79a8';
-    // right line: center of segment + perp offset, text centered on segment
-    ctx.textAlign='center';
-    ctx.fillText(fmtC(f.D_675_from_A), sx(mx+o67x), sy(my+o67y)-6);
-    ctx.fillText(fmtC(f.D_675_from_A), sx(-mx-o67x), sy(my+o67y)-6);
+  // Right side (treble)
+  {
+    const cSR = cS_t, cBR = cB_t;
+    const fR = fTrebleS;
+    const pdxR = cBR - a, pdyR = b - cSR;
+    const plenR = Math.sqrt(pdxR*pdxR + pdyR*pdyR);
+    const o67xR =  pdyR/plenR * offPx;
+    const o67yR = -pdxR/plenR * offPx;
+    const o22xR =  pdyR/plenR * offPx;
+    const o22yR = -pdxR/plenR * offPx;
+    if (fR.x675_on_45 && fR.D_675_from_A != null) {
+      const x0=a, y0=cSR, x1=fR.x675_on_45.x, y1=fR.x675_on_45.y;
+      dimLine(x0+o67xR, y0+o67yR, x1+o67xR, y1+o67yR, '#fd79a8');
+      ctx.fillStyle='#fd79a8';ctx.textAlign='center';
+      ctx.fillText(fmtC(fR.D_675_from_A), sx((x0+x1)/2+o67xR), sy((y0+y1)/2+o67yR)-6);
+    }
+    if (fR.x225_on_45 && fR.D_225_from_B != null) {
+      const x0=fR.x225_on_45.x, y0=fR.x225_on_45.y, x1=cBR, y1=b;
+      dimLine(x0+o22xR, y0+o22yR, x1+o22xR, y1+o22yR, '#a29bfe');
+      ctx.fillStyle='#a29bfe';ctx.textAlign='center';
+      ctx.fillText(fmtC(fR.D_225_from_B), sx((x0+x1)/2+o22xR), sy((y0+y1)/2+o22yR)-6);
+    }
   }
-
-  // 22.5° segment: x225 → cornerB (near back wall, bottom of primary)
-  // outward perp = rotate primary -90° = (pdy, -pdx) → points outside (below back wall)
-  const o22x =  pdy/plen * offPx;
-  const o22y = -pdx/plen * offPx;
-
-  if (f.x225_on_45 && f.D_225_from_B != null) {
-    const x0 = f.x225_on_45.x, y0 = f.x225_on_45.y, x1 = cB, y1 = b;
-    dimLine(x0+o22x, y0+o22y, x1+o22x, y1+o22y, '#a29bfe');
-    dimLine(-x0-o22x, y0+o22y, -x1-o22x, y1+o22y, '#a29bfe');
-    const mx = (x0+x1)/2, my = (y0+y1)/2;
-    ctx.fillStyle='#a29bfe';
-    ctx.textAlign='center';
-    ctx.fillText(fmtC(f.D_225_from_B), sx(mx+o22x), sy(my+o22y)-6);
-    ctx.fillText(fmtC(f.D_225_from_B), sx(-mx-o22x), sy(my+o22y)-6);
+  // Left side (bass)
+  {
+    const cSL = cS_b, cBL = cB_b;
+    const fL = fBassS;
+    const pdxL = cBL - a, pdyL = b - cSL;
+    const plenL = Math.sqrt(pdxL*pdxL + pdyL*pdyL);
+    const o67xL =  pdyL/plenL * offPx;
+    const o67yL = -pdxL/plenL * offPx;
+    const o22xL =  pdyL/plenL * offPx;
+    const o22yL = -pdxL/plenL * offPx;
+    if (fL.x675_on_45 && fL.D_675_from_A != null) {
+      const x0=a, y0=cSL, x1=fL.x675_on_45.x, y1=fL.x675_on_45.y;
+      dimLine(-x0-o67xL, y0+o67yL, -x1-o67xL, y1+o67yL, '#fd79a8');
+      ctx.fillStyle='#fd79a8';ctx.textAlign='center';
+      ctx.fillText(fmtC(fL.D_675_from_A), sx(-(x0+x1)/2-o67xL), sy((y0+y1)/2+o67yL)-6);
+    }
+    if (fL.x225_on_45 && fL.D_225_from_B != null) {
+      const x0=fL.x225_on_45.x, y0=fL.x225_on_45.y, x1=cBL, y1=b;
+      dimLine(-x0-o22xL, y0+o22yL, -x1-o22xL, y1+o22yL, '#a29bfe');
+      ctx.fillStyle='#a29bfe';ctx.textAlign='center';
+      ctx.fillText(fmtC(fL.D_225_from_B), sx(-(x0+x1)/2-o22xL), sy((y0+y1)/2+o22yL)-6);
+    }
   }
 
   // W label
@@ -1435,15 +1588,19 @@ function fmt(v){
   return n.toFixed(2);
 }
 
-function renderBlock(label, colorClass, W, T, n) {
-  const f = computeFacets(W, T, n);
+function renderBlock(label, colorClass, W, T, n, exp) {
+  const f = computeFacets(W, T, n, exp);
   const fromCornerSide = f.b - f.C_side;
   const fromCornerBack = f.a - f.C_back;
+  // Compute separate facets per side for asym and/or sweep
+  const asymActive  = !!(exp && (exp.nBass  != null || exp.nTreble != null));
+  const fBass   = asymActive ? computeFacets(W, T, exp.nBass)   : f;
+  const fTreble = asymActive ? computeFacets(W, T, exp.nTreble) : f;
 
   return `<div class="rblock">
     <div class="rblock-head">
       <h3 class="${colorClass}">${label}</h3>
-      <span class="params">W=${fmtC(W)} · T=${fmtC(T)} · n=${n.toFixed(2)}</span>
+      <span class="params">W=${fmtC(W)} · T=${fmtC(T)} · n=${n.toFixed(2)}${asymActive ? ' · <span style="color:#a29bfe">asym</span>' : ''}</span>
     </div>
     <div class="rblock-body">
 
@@ -1452,23 +1609,23 @@ function renderBlock(label, colorClass, W, T, n) {
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px">
           <div class="markup-item">
             <div class="mi-label">Down side<br>from FB corner</div>
-            <div class="mi-val" style="color:#ff9f43">${fmt(f.C_side)}</div>
-            <div class="mi-sub">${currentUnit}</div>
+            <div class="mi-val" style="color:#ff9f43">${asymActive ? fmt(fBass.C_side)+' / '+fmt(fTreble.C_side) : fmt(f.C_side)}</div>
+            <div class="mi-sub">${asymActive ? 'bass / treble' : currentUnit}</div>
           </div>
           <div class="markup-item">
             <div class="mi-label">From center<br>along back</div>
-            <div class="mi-val" style="color:#ff9f43">${fmt(f.C_back)}</div>
-            <div class="mi-sub">${currentUnit}</div>
+            <div class="mi-val" style="color:#ff9f43">${asymActive ? fmt(fBass.C_back)+' / '+fmt(fTreble.C_back) : fmt(f.C_back)}</div>
+            <div class="mi-sub">${asymActive ? 'bass / treble' : currentUnit}</div>
           </div>
           <div class="markup-item">
             <div class="mi-label">↑ From corner<br>along side</div>
-            <div class="mi-val" style="color:#ff9f43">${fmt(fromCornerSide)}</div>
-            <div class="mi-sub">${currentUnit}</div>
+            <div class="mi-val" style="color:#ff9f43">${asymActive ? fmt(fBass.b-fBass.C_side)+' / '+fmt(fTreble.b-fTreble.C_side) : fmt(fromCornerSide)}</div>
+            <div class="mi-sub">${asymActive ? 'bass / treble' : currentUnit}</div>
           </div>
           <div class="markup-item">
             <div class="mi-label">← From corner<br>along back</div>
-            <div class="mi-val" style="color:#ff9f43">${fmt(fromCornerBack)}</div>
-            <div class="mi-sub">${currentUnit}</div>
+            <div class="mi-val" style="color:#ff9f43">${asymActive ? fmt(fBass.a-fBass.C_back)+' / '+fmt(fTreble.a-fTreble.C_back) : fmt(fromCornerBack)}</div>
+            <div class="mi-sub">${asymActive ? 'bass / treble' : currentUnit}</div>
           </div>
         </div>
         <div style="margin-top:8px;font-size:9px;color:var(--t3)">
@@ -1482,31 +1639,31 @@ function renderBlock(label, colorClass, W, T, n) {
 
           <div class="markup-item" style="border:1px solid rgba(162,155,254,.2);border-radius:3px;padding:10px">
             <div class="mi-label" style="color:#a29bfe">22.5° facet<br><span style="color:var(--t3)">← From center along back</span></div>
-            <div class="mi-val" style="color:#a29bfe">${fmt(f.C_back_225)}</div>
-            <div class="mi-sub">${currentUnit} from center along back</div>
+            <div class="mi-val" style="color:#a29bfe">${asymActive ? fmt(fBass.C_back_225)+' / '+fmt(fTreble.C_back_225) : fmt(f.C_back_225)}</div>
+            <div class="mi-sub">${asymActive ? 'bass / treble' : currentUnit+' from center along back'}</div>
           </div>
 
           <div class="markup-item" style="border:1px solid rgba(162,155,254,.2);border-radius:3px;padding:10px">
             <div class="mi-label" style="color:#a29bfe">22.5° facet<br><span style="color:var(--t3)">◣ along primary from corner B</span></div>
-            <div class="mi-val" style="color:#a29bfe">${fmt(f.D_225_from_B)}</div>
-            <div class="mi-sub">${currentUnit} from corner B along primary</div>
+            <div class="mi-val" style="color:#a29bfe">${asymActive ? fmt(fBass.D_225_from_B)+' / '+fmt(fTreble.D_225_from_B) : fmt(f.D_225_from_B)}</div>
+            <div class="mi-sub">${asymActive ? 'bass / treble' : currentUnit+' from corner B along primary'}</div>
           </div>
 
           <div class="markup-item" style="border:1px solid rgba(253,121,168,.2);border-radius:3px;padding:10px">
             <div class="mi-label" style="color:#fd79a8">67.5° facet<br><span style="color:var(--t3)">↓ Down side from FB corner</span></div>
-            <div class="mi-val" style="color:#fd79a8">${fmt(f.C_side_675)}</div>
-            <div class="mi-sub">${currentUnit} from FB corner down side</div>
+            <div class="mi-val" style="color:#fd79a8">${asymActive ? fmt(fBass.C_side_675)+' / '+fmt(fTreble.C_side_675) : fmt(f.C_side_675)}</div>
+            <div class="mi-sub">${asymActive ? 'bass / treble' : currentUnit+' from FB corner down side'}</div>
           </div>
 
           <div class="markup-item" style="border:1px solid rgba(253,121,168,.2);border-radius:3px;padding:10px">
             <div class="mi-label" style="color:#fd79a8">67.5° facet<br><span style="color:var(--t3)">◥ along primary from corner A</span></div>
-            <div class="mi-val" style="color:#fd79a8">${fmt(f.D_675_from_A)}</div>
-            <div class="mi-sub">${currentUnit} from corner A along primary</div>
+            <div class="mi-val" style="color:#fd79a8">${asymActive ? fmt(fBass.D_675_from_A)+' / '+fmt(fTreble.D_675_from_A) : fmt(f.D_675_from_A)}</div>
+            <div class="mi-sub">${asymActive ? 'bass / treble' : currentUnit+' from corner A along primary'}</div>
           </div>
 
         </div>
         <div style="margin-top:8px;font-size:9px;color:var(--t3)">
-          Primary facet length: ${fmt(f.primaryLen)} ${currentUnit} &nbsp;·&nbsp;
+          Primary facet length: ${asymActive ? fmt(fBass.primaryLen)+' / '+fmt(fTreble.primaryLen) : fmt(f.primaryLen)} ${currentUnit} &nbsp;·&nbsp;
           Corner A = side wall · Corner B = back wall
         </div>
       </div>
@@ -1598,6 +1755,40 @@ function attachInputListeners() {
   });
 }
 // ═══════════════════════════════════════════════════
+// EXPERIMENTAL MODES
+// ═══════════════════════════════════════════════════
+
+let asymMode = false;
+
+function toggleExp(mode) {
+  if(mode === 'asym') {
+    asymMode = document.getElementById('asymToggle').checked;
+    document.getElementById('asymFields').classList.toggle('open', asymMode);
+  }
+  debouncedCalculate();
+}
+
+// Asymmetric superellipse: left half uses nBass, right half uses nTreble
+function seYAsym(x, a, b, nBass, nTreble) {
+  const n = x <= 0 ? nBass : nTreble;
+  const r = Math.abs(x / a);
+  if(r >= 1) return 0;
+  return b * Math.pow(1 - Math.pow(r, n), 1/n);
+}
+
+
+
+function getExpParams(fret) {
+  // Returns {nBass, nTreble, tBass, tTreble} for given fret (1 or 12)
+  // fret is used to pick fret1 vs fret12 values
+  const suffix = fret === 1 ? '1' : '12';
+  return asymMode ? {
+    nBass:   parseFloat(document.getElementById('nBass'+suffix).value),
+    nTreble: parseFloat(document.getElementById('nTreble'+suffix).value),
+  } : null;
+}
+
+// ═══════════════════════════════════════════════════
 // CALCULATE
 // ═══════════════════════════════════════════════════
 
@@ -1637,44 +1828,58 @@ function calculate() {
 
   if([W1,W12,T1,T12,n1,n12].some(isNaN)) { showToast('⚠ Check your input values'); return; }
 
+  // Experimental params
+  const exp1  = asymMode ? {
+    nBass:   parseFloat(document.getElementById('nBass1').value),
+    nTreble: parseFloat(document.getElementById('nTreble1').value),
+  } : null;
+  const exp12 = asymMode ? {
+    nBass:   parseFloat(document.getElementById('nBass12').value),
+    nTreble: parseFloat(document.getElementById('nTreble12').value),
+  } : null;
+
   const t = (mid-1)/11;
   const Wm = lerp(W1,W12,t);
   const Tm = lerp(T1,T12,t);
   const nm = lerp(n1,n12,t);
+  const expm = (exp1 && exp12) ? {
+    nBass:   lerp(exp1.nBass,   exp12.nBass,   t),
+    nTreble: lerp(exp1.nTreble, exp12.nTreble, t),
+  } : null;
 
   document.getElementById('midColLabel').textContent = `Fret ${mid}`;
 
   // Step 1 canvases — primary facets on rectangle
-  drawStep1('c1s1',   W1,  T1,  n1,  '#e2e5e9');
-  drawStep1('cmids1', Wm,  Tm,  nm,  '#4a5568');
-  drawStep1('c12s1',  W12, T12, n12, '#e2e5e9');
+  drawStep1('c1s1',   W1,  T1,  n1,  '#e2e5e9', exp1);
+  drawStep1('cmids1', Wm,  Tm,  nm,  '#4a5568',  expm);
+  drawStep1('c12s1',  W12, T12, n12, '#e2e5e9', exp12);
 
   // Wire up lightbox clicks on all canvases
   const lbMap = [
-    ['c1s1',   'Step 1 · Fret 1',         W1,  T1,  n1,  1, '#e2e5e9'],
-    ['cmids1', 'Step 1 · Fret ' + mid,    Wm,  Tm,  nm,  1, '#4a5568'],
-    ['c12s1',  'Step 1 · Fret 12',        W12, T12, n12, 1, '#e2e5e9'],
-    ['c1s2',   'Step 2 · Fret 1',         W1,  T1,  n1,  2, '#e2e5e9'],
-    ['cmids2', 'Step 2 · Fret ' + mid,    Wm,  Tm,  nm,  2, '#4a5568'],
-    ['c12s2',  'Step 2 · Fret 12',        W12, T12, n12, 2, '#e2e5e9'],
+    ['c1s1',   'Step 1 · Fret 1',         W1,  T1,  n1,  1, '#e2e5e9', exp1],
+    ['cmids1', 'Step 1 · Fret ' + mid,    Wm,  Tm,  nm,  1, '#4a5568',  expm],
+    ['c12s1',  'Step 1 · Fret 12',        W12, T12, n12, 1, '#e2e5e9', exp12],
+    ['c1s2',   'Step 2 · Fret 1',         W1,  T1,  n1,  2, '#e2e5e9', exp1],
+    ['cmids2', 'Step 2 · Fret ' + mid,    Wm,  Tm,  nm,  2, '#4a5568',  expm],
+    ['c12s2',  'Step 2 · Fret 12',        W12, T12, n12, 2, '#e2e5e9', exp12],
   ];
-  lbMap.forEach(([id, title, W, T, n, step, col]) => {
+  lbMap.forEach(([id, title, W, T, n, step, col, expP]) => {
     const el = document.getElementById(id);
     if(el) {
       el.style.cursor = 'zoom-in';
-      el.onclick = () => openLB(title, W, T, n, step, col);
+      el.onclick = () => openLB(title, W, T, n, step, col, expP);
     }
   });
 
   // Step 2 canvases — secondary facets on hexagon
-  drawStep2('c1s2',   W1,  T1,  n1,  '#e2e5e9');
-  drawStep2('cmids2', Wm,  Tm,  nm,  '#4a5568');
-  drawStep2('c12s2',  W12, T12, n12, '#e2e5e9');
+  drawStep2('c1s2',   W1,  T1,  n1,  '#e2e5e9', exp1);
+  drawStep2('cmids2', Wm,  Tm,  nm,  '#4a5568',  expm);
+  drawStep2('c12s2',  W12, T12, n12, '#e2e5e9', exp12);
 
   document.getElementById('results').innerHTML =
-    renderBlock(`▶ Fret 1`,       'c-g', W1,  T1,  n1)  +
-    renderBlock(`◈ Fret ${mid}`,  'c-b', Wm,  Tm,  nm)  +
-    renderBlock(`▶ Fret 12`,      'c-a', W12, T12, n12);
+    renderBlock(`▶ Fret 1`,       'c-g', W1,  T1,  n1,  exp1)  +
+    renderBlock(`◈ Fret ${mid}`,  'c-b', Wm,  Tm,  nm,  expm)  +
+    renderBlock(`▶ Fret 12`,      'c-a', W12, T12, n12, exp12);
 
 }
 
@@ -2028,7 +2233,7 @@ window.addEventListener('load', () => {
 // LIGHTBOX
 // ═══════════════════════════════════════════════════
 
-function drawLBCanvas(W, T, n, step, accentColor) {
+function drawLBCanvas(W, T, n, step, accentColor, exp) {
   const lbCanvas = document.getElementById('lbCanvas');
   if(!lbCanvas) return;
 
@@ -2047,23 +2252,23 @@ function drawLBCanvas(W, T, n, step, accentColor) {
 
   const tmpId = '__lb_tmp__';
   lbCanvas.id = tmpId;
-  if(step === 1) drawStep1(tmpId, W, T, n, accentColor);
-  else           drawStep2(tmpId, W, T, n, accentColor);
+  if(step === 1) drawStep1(tmpId, W, T, n, accentColor, exp);
+  else           drawStep2(tmpId, W, T, n, accentColor, exp);
   lbCanvas.id = 'lbCanvas';
 }
 
-function openLB(title, W, T, n, step, accentColor) {
+function openLB(title, W, T, n, step, accentColor, exp) {
   const overlay = document.getElementById('lbOverlay');
   const titleEl = document.getElementById('lbTitle');
 
   titleEl.textContent = title;
   overlay.classList.add('open');
-  window._lbState = {W, T, n, step, col: accentColor};
+  window._lbState = {W, T, n, step, col: accentColor, exp};
 
   // Double rAF ensures browser has completed layout before we measure
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
-      drawLBCanvas(W, T, n, step, accentColor);
+      drawLBCanvas(W, T, n, step, accentColor, exp);
     });
   });
 }
@@ -2083,7 +2288,7 @@ window.addEventListener('resize', ()=>{
   if(overlay && overlay.classList.contains('open')) {
     requestAnimationFrame(() => requestAnimationFrame(() => {
       const lb = window._lbState;
-      if(lb) drawLBCanvas(lb.W, lb.T, lb.n, lb.step, lb.col);
+      if(lb) drawLBCanvas(lb.W, lb.T, lb.n, lb.step, lb.col, lb.exp);
     }));
   }
 });
