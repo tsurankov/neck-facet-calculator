@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fretboard Inlay Visualizer</title>
+<style>
+:root {
+  --bg: #0c0e0d;
+  --s1: #111412;
+  --s2: #1a1e1c;
+  --border: #2a3028;
+  --text: #e4ede4;
+  --t2: #9aaa9a;
+  --t3: #5a6a5a;
+  --accent: #c8cdd0;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 13px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.topbar {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--s1);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--accent);
+}
+.subtitle { font-size: 10px; color: var(--t3); margin-top: 2px; }
+
+.main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+.sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  padding: 16px;
+  overflow-y: auto;
+  background: var(--s1);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.canvas-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow: auto;
+}
+
+.card {
+  background: var(--s2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 12px;
+}
+.card-title {
+  font-size: 9px;
+  color: var(--t3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+.fg { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+.fg:last-child { margin-bottom: 0; }
+.fg label { font-size: 9px; color: var(--t3); text-transform: uppercase; letter-spacing: 0.8px; }
+.fg input[type=range] { width: 100%; accent-color: var(--accent); cursor: pointer; }
+.fg .val { font-size: 12px; color: var(--accent); text-align: right; margin-top: 2px; }
+
+.inlay-btns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+.inlay-btn {
+  padding: 7px 8px;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--t2);
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  cursor: pointer;
+  text-align: center;
+  transition: all .15s;
+}
+.inlay-btn:hover { border-color: var(--accent); color: var(--text); }
+.inlay-btn.active { border-color: var(--accent); background: rgba(200,205,208,.08); color: var(--text); }
+
+canvas {
+  border-radius: 6px;
+  display: block;
+  max-width: 100%;
+}
+
+.color-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.color-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border-color .15s;
+}
+.color-swatch.active { border-color: white; }
+
+.hint {
+  font-size: 9px;
+  color: var(--t3);
+  line-height: 1.6;
+  margin-top: 4px;
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <div class="title">Fretboard Inlay Visualizer</div>
+    <div class="subtitle">Sinusoidal wave · 7-string multiscale</div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="sidebar">
+
+    <div class="card">
+      <div class="card-title">Fretboard</div>
+      <div class="fg">
+        <label>Nut width (mm)</label>
+        <input type="range" id="wNut" min="44" max="56" step="0.5" value="49">
+        <div class="val" id="wNutVal">49</div>
+      </div>
+      <div class="fg">
+        <label>Last fret width (mm)</label>
+        <input type="range" id="wLast" min="60" max="80" step="0.5" value="66">
+        <div class="val" id="wLastVal">66</div>
+      </div>
+      <div class="fg">
+        <label>Number of frets</label>
+        <input type="range" id="frets" min="20" max="27" step="1" value="24">
+        <div class="val" id="fretsVal">24</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Curve</div>
+      <div class="inlay-btns" style="margin-bottom:10px">
+        <button class="inlay-btn active" onclick="setCurveType('linear')" id="btn-ct-linear">Linear</button>
+        <button class="inlay-btn" onclick="setCurveType('bezier')" id="btn-ct-bezier">S-Curve</button>
+        <button class="inlay-btn" onclick="setCurveType('sine')" id="btn-ct-sine">Sine</button>
+        <button class="inlay-btn" onclick="setCurveType('tangent')" id="btn-ct-tangent">Tangent</button>
+      </div>
+      <div class="fg">
+        <label>Start position (heel)</label>
+        <input type="range" id="phase" min="0" max="1" step="0.01" value="0.15">
+        <div class="val" id="phaseVal">0.15</div>
+      </div>
+      <div class="fg">
+        <label>End position (nut)</label>
+        <input type="range" id="amp" min="0" max="1" step="0.01" value="0.85">
+        <div class="val" id="ampVal">0.85</div>
+      </div>
+      <div class="fg">
+        <label>Curve intensity</label>
+        <input type="range" id="cycles" min="-1" max="1" step="0.05" value="0">
+        <div class="val" id="cyclesVal">0.00</div>
+      </div>
+      <div class="fg">
+        <label>Multiscale angle</label>
+        <input type="range" id="multiscale" min="0" max="1" step="0.05" value="0.7">
+        <div class="val" id="multiscaleVal">0.70</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Inlay Style</div>
+      <div class="inlay-btns">
+        <button class="inlay-btn active" onclick="setStyle('segment')" id="btn-segment">Segments</button>
+        <button class="inlay-btn" onclick="setStyle('dot')" id="btn-dot">Dots</button>
+        <button class="inlay-btn" onclick="setStyle('bar')" id="btn-bar">Bars</button>
+        <button class="inlay-btn" onclick="setStyle('ghost')" id="btn-ghost">Ghost Bars</button>
+      </div>
+      <div class="fg" style="margin-top:10px">
+        <label>Inlay size</label>
+        <input type="range" id="inlaySize" min="0.2" max="3" step="0.05" value="0.8">
+        <div class="val" id="inlaySizeVal">0.8</div>
+      </div>
+      <div style="margin-top:8px">
+        <div class="card-title" style="margin-bottom:6px">Inlay color</div>
+        <div class="color-row" id="colorRow">
+          <div class="color-swatch active" style="background:#e8e4d8" data-color="#e8e4d8" title="Bone"></div>
+          <div class="color-swatch" style="background:#f5f0e8" data-color="#f5f0e8" title="Pearl"></div>
+          <div class="color-swatch" style="background:#7ecfb0" data-color="#7ecfb0" title="Mint"></div>
+          <div class="color-swatch" style="background:#a29bfe" data-color="#a29bfe" title="Lavender"></div>
+          <div class="color-swatch" style="background:#ff9f43" data-color="#ff9f43" title="Amber"></div>
+          <div class="color-swatch" style="background:#fd79a8" data-color="#fd79a8" title="Pink"></div>
+          <div class="color-swatch" style="background:#74b9ff" data-color="#74b9ff" title="Blue"></div>
+          <div class="color-swatch" style="background:#55efc4" data-color="#55efc4" title="Teal"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Display</div>
+      <div class="fg">
+        <label>Fret markers</label>
+        <div style="display:flex;gap:6px;margin-top:2px">
+          <label style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--t2);cursor:pointer">
+            <input type="checkbox" id="showStd" checked style="accent-color:var(--accent)"> Standard (3,5,7,9,12)
+          </label>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:4px">
+          <label style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--t2);cursor:pointer">
+            <input type="checkbox" id="showAll" style="accent-color:var(--accent)"> All frets
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="hint">
+      Drag sliders to explore.<br>
+      Segments follow the wave tangent angle — similar to Skervesen but smoother.<br><br>
+      Tip: try Amplitude 2–3mm, Cycles 0.75–1.25 for subtle effect.
+    </div>
+
+  </div>
+
+  <div class="canvas-area">
+    <canvas id="fb"></canvas>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('fb');
+const ctx = canvas.getContext('2d');
+
+let inlayStyle = 'segment';
+let inlayColor = '#e8e4d8';
+let curveType = 'linear';
+
+function setCurveType(t) {
+  curveType = t;
+  document.querySelectorAll('[id^="btn-ct-"]').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-ct-' + t)?.classList.add('active');
+  draw();
+}
+
+const MARKER_FRETS = [1, 3, 5, 7, 9, 12, 15, 17, 19, 21, 24];
+
+function get(id) { return parseFloat(document.getElementById(id).value); }
+function getChk(id) { return document.getElementById(id).checked; }
+
+function fretPos(f, frets, scale) {
+  // fret position ratio along length
+  return 1 - Math.pow(2, -f/12);
+}
+
+function draw() {
+  const wNut    = get('wNut');
+  const wLast   = get('wLast');
+  const nFrets  = Math.round(get('frets'));
+  const amp     = get('amp');
+  const curve   = get('cycles');
+  const phase   = get('phase');
+  const msBlend = get('multiscale');
+  const iSize   = get('inlaySize');
+  const showStd = getChk('showStd');
+  const showAll = getChk('showAll');
+
+  const PAD_L = 40, PAD_R = 60, PAD_T = 40, PAD_B = 40;
+  const FB_H = 90, FB_W = 960;
+  const W = FB_W + PAD_L + PAD_R;
+  const H = FB_H + PAD_T + PAD_B;
+
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width  = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+
+  const scaleLen = 670;
+  // heel (fret 24) on LEFT, nut on RIGHT — flipped
+  const xOf = f => PAD_L + (1 - fretPos(f, nFrets, scaleLen) / fretPos(nFrets, nFrets, scaleLen)) * FB_W;
+
+  // Fretboard: heel=wide(left), nut=narrow(right)
+  const nutW  = (wNut / wLast) * FB_H;
+  const nutOff = (FB_H - nutW) / 2;
+
+  function edgeTopY(x) {
+    const t = (x - PAD_L) / FB_W; // 0=heel, 1=nut
+    return PAD_T + t * nutOff;
+  }
+  function edgeBotY(x) {
+    const t = (x - PAD_L) / FB_W;
+    return PAD_T + FB_H - t * nutOff;
+  }
+  function halfPx(x) { return (edgeBotY(x) - edgeTopY(x)) / 2; }
+
+  // Background
+  ctx.fillStyle = '#18130a';
+  ctx.beginPath();
+  ctx.moveTo(PAD_L, PAD_T); ctx.lineTo(PAD_L + FB_W, PAD_T + nutOff);
+  ctx.lineTo(PAD_L + FB_W, PAD_T + FB_H - nutOff); ctx.lineTo(PAD_L, PAD_T + FB_H);
+  ctx.closePath(); ctx.fill();
+
+  // Perpendicular fret (for multiscale tilt) — fret 9 from nut = fret (nFrets-9) from heel
+  // Perpendicular fret 9 from nut — in flipped coords, ratio from nut
+  const perp9ratio = fretPos(9, nFrets, scaleLen) / fretPos(nFrets, nFrets, scaleLen);
+  const perpX = PAD_L + (1 - perp9ratio) * FB_W;
+
+  // Fret lines
+  for (let f = 0; f <= nFrets; f++) {
+    const x = xOf(f);
+    const topY = edgeTopY(x), botY = edgeBotY(x);
+    const tilt = msBlend * (x - perpX) * 0.055;
+    if (f === 0) { ctx.strokeStyle = '#554030'; ctx.lineWidth = 2; }
+    else if (f === nFrets) { ctx.strokeStyle = '#c0b090'; ctx.lineWidth = 3.5; }
+    else if (f === nFrets - 12) { ctx.strokeStyle = '#8a7a60'; ctx.lineWidth = 2; }
+    else { ctx.strokeStyle = showAll ? '#3a4535' : '#252c22'; ctx.lineWidth = showAll ? 0.8 : 0.5; }
+    ctx.beginPath(); ctx.moveTo(x + tilt, topY); ctx.lineTo(x - tilt, botY); ctx.stroke();
+  }
+
+  // Strings (7)
+  for (let s = 0; s < 7; s++) {
+    const t = s / 6;
+    ctx.strokeStyle = `rgba(180,160,100,${0.15 + s*0.04})`;
+    ctx.lineWidth = 0.4 + s * 0.15;
+    ctx.beginPath();
+    ctx.moveTo(PAD_L, PAD_T + t * FB_H);
+    ctx.lineTo(PAD_L + FB_W, PAD_T + nutOff + t * nutW);
+    ctx.stroke();
+  }
+
+  // ── CURVE ──
+  const xStart = PAD_L, xEnd = PAD_L + FB_W;
+  const yStart = edgeTopY(xStart) + phase * (edgeBotY(xStart) - edgeTopY(xStart));
+  const yEnd   = edgeTopY(xEnd)   + amp   * (edgeBotY(xEnd)   - edgeTopY(xEnd));
+
+  function curveY(x) {
+    const t = (x - xStart) / FB_W; // 0=heel, 1=nut
+    // y range at this x
+    const yTop = edgeTopY(x), yBot = edgeBotY(x);
+    const yRange = yBot - yTop;
+
+    // normalized position 0-1 interpolated between start and end
+    let pos;
+    switch(curveType) {
+      case 'linear':
+        pos = phase + (amp - phase) * t;
+        break;
+      case 'bezier': {
+        // cubic bezier in y-space with S-bend
+        const cpBend = curve * 0.4;
+        const cp1 = phase * 0.6 + amp * 0.4 + cpBend;
+        const cp2 = phase * 0.4 + amp * 0.6 - cpBend;
+        const mt = 1 - t;
+        pos = mt*mt*mt*phase + 3*mt*mt*t*cp1 + 3*mt*t*t*cp2 + t*t*t*amp;
+        break;
+      }
+      case 'sine': {
+        // sine wave between start and end
+        const mid = (phase + amp) / 2;
+        const halfAmp = (amp - phase) / 2;
+        const freq = Math.max(0.25, curve + 1); // curve slider = freq
+        pos = mid + halfAmp * Math.sin(freq * Math.PI * t - Math.PI/2 + Math.PI * (phase < amp ? 0.5 : -0.5));
+        // simpler: lerp + sine offset
+        const base = phase + (amp - phase) * t;
+        const sineOffset = (amp - phase) * 0.3 * Math.sin(freq * Math.PI * t) * curve;
+        pos = base + sineOffset;
+        break;
+      }
+      case 'tangent': {
+        // tangent-like: slow in middle, fast at edges (or vice versa)
+        // map t through tanh for smooth S but steeper than bezier
+        const k = 1 + Math.abs(curve) * 3;
+        const tMapped = (Math.tanh(k * (t - 0.5)) / Math.tanh(k * 0.5) + 1) / 2;
+        pos = phase + (amp - phase) * (curve >= 0 ? tMapped : 1 - tMapped);
+        break;
+      }
+      default:
+        pos = phase + (amp - phase) * t;
+    }
+    return yTop + pos * yRange;
+  }
+
+  function curveAngle(x) {
+    const dx = 1.5;
+    return Math.atan2(curveY(x+dx) - curveY(x-dx), 2*dx);
+  }
+
+  // Guide line
+  ctx.beginPath();
+  for (let px = xStart; px <= xEnd; px += 3) {
+    px === xStart ? ctx.moveTo(px, curveY(px)) : ctx.lineTo(px, curveY(px));
+  }
+  ctx.strokeStyle = inlayColor + '35';
+  ctx.lineWidth = 1; ctx.setLineDash([5,7]); ctx.stroke(); ctx.setLineDash([]);
+
+  // Inlays
+  const markerFrets = showStd
+    ? MARKER_FRETS.filter(f => f <= nFrets)
+    : Array.from({length: nFrets}, (_,i) => i+1);
+
+  markerFrets.forEach(f => {
+    if (f > nFrets) return;
+    // Midpoint between fret lines — in flipped layout fret f is LEFT of fret f-1
+    // x of midline between fret f-1 and f at the curve's y level
+    // Step 1: get approximate x (ignore tilt)
+    const xAvg = (xOf(f) + xOf(f - 1)) / 2;
+    // Step 2: get curve y at that x
+    const cyRough = curveY(xAvg);
+    // Step 3: convert curve y to t (0=top edge, 1=bottom edge) at xAvg
+    const tAtCurve = (cyRough - edgeTopY(xAvg)) / (edgeBotY(xAvg) - edgeTopY(xAvg));
+    const tClamped = Math.max(0, Math.min(1, tAtCurve));
+    // Step 4: compute mid-x at this t accounting for fret tilts
+    const tiltF0 = msBlend * (xOf(f-1) - perpX) * 0.055;
+    const tiltF1 = msBlend * (xOf(f)   - perpX) * 0.055;
+    const xF0atT = xOf(f-1) + tiltF0 * (1 - 2*tClamped);
+    const xF1atT = xOf(f)   + tiltF1 * (1 - 2*tClamped);
+    const x = (xF0atT + xF1atT) / 2;
+    // Step 5: y from curve at corrected x
+    const cy = curveY(x);
+    // Fret tilt at this x position
+    const tiltPx = msBlend * (x - perpX) * 0.055;
+    // The fret line vector: from (x+tilt, topY) to (x-tilt, botY)
+    // dx = -2*tilt, dy = botY - topY
+    // Bar should be PARALLEL to fret line — same direction vector
+    // atan2(dy, dx) gives the angle of the fret line itself
+    const topY = edgeTopY(x), botY = edgeBotY(x);
+    const fretAngle = Math.atan2(botY - topY, -2 * tiltPx);
+    const angle = fretAngle;
+    const hw = halfPx(x);
+    const segLen = iSize * hw * 1.6;
+    const is12 = ((f === 12) || (f === 24)) && (inlayStyle === 'dot');
+
+    ctx.save(); ctx.translate(x, cy);
+    // All bar-like styles align with fret direction
+    ctx.rotate(fretAngle);
+
+    switch(inlayStyle) {
+      case 'segment': {
+        // Solid rounded bar — full width of fret space
+        const bw = segLen * 1.2, bh = hw * 0.16 * iSize;
+        ctx.fillStyle = inlayColor;
+        ctx.beginPath(); ctx.roundRect(-bw/2, -bh/2, bw, bh, bh/2); ctx.fill();
+        if (is12) {
+          const gap = bh * 1.8;
+          ctx.beginPath(); ctx.roundRect(-bw/2, gap/2, bw, bh, bh/2); ctx.fill();
+          ctx.beginPath(); ctx.roundRect(-bw/2, -gap/2 - bh, bw, bh, bh/2); ctx.fill();
+        }
+        break;
+      }
+      case 'dot': {
+        ctx.rotate(-fretAngle); // undo rotation for dots
+        const r = hw * 0.28 * iSize;
+        ctx.fillStyle = inlayColor;
+        ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fill();
+        if (is12) { ctx.beginPath(); ctx.arc(0,r*2.8,r,0,Math.PI*2); ctx.fill(); }
+        break;
+      }
+      case 'bar': {
+        // Filled bar
+        const bw = segLen * 1.2, bh = hw * 0.22 * iSize;
+        ctx.fillStyle = inlayColor;
+        ctx.beginPath(); ctx.roundRect(-bw/2, -bh/2, bw, bh, bh/2); ctx.fill();
+        if (is12) {
+          const gap = bh * 2;
+          ctx.beginPath(); ctx.roundRect(-bw/2, gap/2, bw, bh, bh/2); ctx.fill();
+          ctx.beginPath(); ctx.roundRect(-bw/2, -gap/2 - bh, bw, bh, bh/2); ctx.fill();
+        }
+        break;
+      }
+      case 'ghost': {
+        // Ghost bars — oval outline only, no fill, like speedometer markers
+        const bw = segLen * 1.1, bh = hw * 0.22 * iSize;
+        const r = bh / 2;
+        ctx.strokeStyle = inlayColor;
+        ctx.lineWidth = iSize * 0.9;
+        ctx.fillStyle = 'transparent';
+        ctx.beginPath(); ctx.roundRect(-bw/2, -bh/2, bw, bh, r); ctx.stroke();
+        if (is12) {
+          const gap = bh * 2.2;
+          ctx.beginPath(); ctx.roundRect(-bw/2, gap/2, bw, bh, r); ctx.stroke();
+          ctx.beginPath(); ctx.roundRect(-bw/2, -gap/2 - bh, bw, bh, r); ctx.stroke();
+        }
+        break;
+      }
+    }
+    ctx.restore();
+
+    // Label
+    ctx.fillStyle='#3a4535'; ctx.font='8px monospace'; ctx.textAlign='center';
+    // Show fret number from nut perspective
+    ctx.fillText(f, x, edgeTopY(x) - 7);
+  });
+
+  ctx.fillStyle='#4a5540'; ctx.font='10px monospace';
+  ctx.textAlign='left';  ctx.fillText('HEEL ←', PAD_L, PAD_T + FB_H + 20);
+  ctx.textAlign='right'; ctx.fillText('→ NUT', PAD_L + FB_W, PAD_T + FB_H + 20);
+}
+
+
+function setStyle(s) {
+  inlayStyle = s;
+  document.querySelectorAll('.inlay-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-' + s)?.classList.add('active');
+  draw();
+}
+
+// Sliders
+['wNut','wLast','frets','amp','cycles','phase','multiscale','inlaySize'].forEach(id => {
+  const el = document.getElementById(id);
+  const valEl = document.getElementById(id + 'Val');
+  el.addEventListener('input', () => {
+    valEl.textContent = parseFloat(el.value).toFixed(id === 'phase' ? 2 : id === 'multiscale' ? 2 : id === 'cycles' ? 2 : 1);
+    draw();
+  });
+});
+
+['showStd','showAll'].forEach(id => {
+  document.getElementById(id).addEventListener('change', draw);
+});
+
+// Color swatches
+document.querySelectorAll('.color-swatch').forEach(sw => {
+  sw.addEventListener('click', () => {
+    document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+    sw.classList.add('active');
+    inlayColor = sw.dataset.color;
+    draw();
+  });
+});
+
+draw();
+window.addEventListener('resize', draw);
+</script>
+</body>
+</html>
